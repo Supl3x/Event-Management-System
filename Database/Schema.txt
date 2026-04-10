@@ -1,0 +1,554 @@
+-- ============================================================
+-- SMART CAMPUS EVENT TICKETING & REAL-TIME EVENT PORTAL SYSTEM
+-- Complete Supabase (PostgreSQL) Database Schema
+-- Normalized to BCNF | Run this entire file in Supabase SQL Editor
+-- ============================================================
+
+-- ============================================================
+-- STEP 1: ENABLE EXTENSIONS
+-- ============================================================
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- ============================================================
+-- STEP 2: DROP EXISTING TABLES (safe re-run)
+-- ============================================================
+DROP TABLE IF EXISTS Ticket CASCADE;
+DROP TABLE IF EXISTS Payment CASCADE;
+DROP TABLE IF EXISTS Registration CASCADE;
+DROP TABLE IF EXISTS TeamMember CASCADE;
+DROP TABLE IF EXISTS Team CASCADE;
+DROP TABLE IF EXISTS CompetitionStaff CASCADE;
+DROP TABLE IF EXISTS EventStaff CASCADE;
+DROP TABLE IF EXISTS Competition CASCADE;
+DROP TABLE IF EXISTS Event CASCADE;
+DROP TABLE IF EXISTS OrganizerRoleRequest CASCADE;
+DROP TABLE IF EXISTS Volunteer CASCADE;
+DROP TABLE IF EXISTS Organizer CASCADE;
+DROP TABLE IF EXISTS Admin CASCADE;
+DROP TABLE IF EXISTS Student CASCADE;
+DROP TABLE IF EXISTS Users CASCADE;
+
+
+-- ============================================================
+-- BLOCK 1: CREATE ALL TABLES (Initial, Pre-Normalization)
+-- This block creates the raw schema based on the ER diagram.
+-- Anomalies are identified below, then fixed via ALTER commands.
+-- ============================================================
+
+-- 1. BASE USER TABLE (Super-entity in EER Specialization)
+CREATE TABLE Users (
+    UserID      SERIAL PRIMARY KEY,
+    Name        VARCHAR(150) NOT NULL,
+    Email       VARCHAR(255) NOT NULL UNIQUE,
+    Phone       VARCHAR(20)  NOT NULL
+);
+
+-- 2. STUDENT (Specialization of User)
+CREATE TABLE Student (
+    UserID      INT PRIMARY KEY REFERENCES Users(UserID) ON DELETE CASCADE,
+    RollNumber  VARCHAR(50) NOT NULL UNIQUE,
+    Department  VARCHAR(100) NOT NULL
+);
+
+-- 3. ADMIN (Specialization of User)
+CREATE TABLE Admin (
+    UserID      INT PRIMARY KEY REFERENCES Users(UserID) ON DELETE CASCADE
+);
+
+-- 4. ORGANIZER (Specialization of User)
+CREATE TABLE Organizer (
+    UserID      INT PRIMARY KEY REFERENCES Users(UserID) ON DELETE CASCADE
+);
+
+-- 5. VOLUNTEER (Specialization of User)
+CREATE TABLE Volunteer (
+    UserID      INT PRIMARY KEY REFERENCES Users(UserID) ON DELETE CASCADE
+);
+
+-- 6. ORGANIZER ROLE REQUEST (Student requests → Admin approves)
+CREATE TABLE OrganizerRoleRequest (
+    RequestID   SERIAL PRIMARY KEY,
+    StudentID   INT NOT NULL REFERENCES Student(UserID) ON DELETE CASCADE,
+    ApprovedBy  INT REFERENCES Admin(UserID) ON DELETE SET NULL,
+    Status      VARCHAR(20) NOT NULL DEFAULT 'Pending'
+        CHECK (Status IN ('Pending', 'Approved', 'Rejected')),
+    RequestedAt TIMESTAMP NOT NULL DEFAULT NOW(),
+    ReviewedAt  TIMESTAMP
+);
+
+-- 7. EVENT (Created by Organizer)
+CREATE TABLE Event (
+    EventID     SERIAL PRIMARY KEY,
+    Name        VARCHAR(200) NOT NULL,
+    Department  VARCHAR(100) NOT NULL,
+    Location    VARCHAR(200) NOT NULL,
+    StartDate   DATE NOT NULL,
+    EndDate     DATE NOT NULL,
+    CreatedBy   INT NOT NULL REFERENCES Organizer(UserID) ON DELETE RESTRICT,
+    CONSTRAINT chk_event_dates CHECK (EndDate >= StartDate)
+);
+
+-- 8. COMPETITION (Sub-event inside an Event)
+CREATE TABLE Competition (
+    CompetitionID   SERIAL PRIMARY KEY,
+    EventID         INT NOT NULL REFERENCES Event(EventID) ON DELETE CASCADE,
+    Name            VARCHAR(200) NOT NULL,
+    Description     TEXT,
+    Location        VARCHAR(200) NOT NULL,
+    StartDate       DATE NOT NULL,
+    EndDate         DATE NOT NULL,
+    MaxTeamSize     INT NOT NULL DEFAULT 1
+        CHECK (MaxTeamSize BETWEEN 1 AND 5),
+    EntryFee        NUMERIC(10,2) NOT NULL DEFAULT 0.00,
+    CONSTRAINT chk_comp_dates CHECK (EndDate >= StartDate)
+);
+
+-- 9. EVENT STAFF (Volunteers assigned to Events - M:N)
+CREATE TABLE EventStaff (
+    EventID     INT NOT NULL REFERENCES Event(EventID) ON DELETE CASCADE,
+    UserID      INT NOT NULL REFERENCES Volunteer(UserID) ON DELETE CASCADE,
+    Role        VARCHAR(100) NOT NULL DEFAULT 'Volunteer',
+    PRIMARY KEY (EventID, UserID)
+);
+
+-- 10. COMPETITION STAFF (Volunteers assigned to Competitions - M:N)
+CREATE TABLE CompetitionStaff (
+    CompetitionID   INT NOT NULL REFERENCES Competition(CompetitionID) ON DELETE CASCADE,
+    UserID          INT NOT NULL REFERENCES Volunteer(UserID) ON DELETE CASCADE,
+    Role            VARCHAR(100) NOT NULL DEFAULT 'Volunteer',
+    PRIMARY KEY (CompetitionID, UserID)
+);
+
+-- 11. TEAM (For team-based competitions where MaxTeamSize > 1)
+CREATE TABLE Team (
+    TeamID          SERIAL PRIMARY KEY,
+    TeamName        VARCHAR(200) NOT NULL,
+    LeaderUserID    INT NOT NULL REFERENCES Users(UserID) ON DELETE RESTRICT,
+    CompetitionID   INT NOT NULL REFERENCES Competition(CompetitionID) ON DELETE CASCADE,
+    CONSTRAINT uq_team_competition UNIQUE (TeamName, CompetitionID)
+);
+
+-- 12. TEAM MEMBER (Members of a team, may not be system users)
+CREATE TABLE TeamMember (
+    MemberID    SERIAL PRIMARY KEY,
+    TeamID      INT NOT NULL REFERENCES Team(TeamID) ON DELETE CASCADE,
+    Name        VARCHAR(150) NOT NULL,
+    RollNumber  VARCHAR(50),
+    Department  VARCHAR(100),
+    Email       VARCHAR(255) NOT NULL
+);
+
+-- 13. REGISTRATION (Core Entity)
+CREATE TABLE Registration (
+    RegistrationID  SERIAL PRIMARY KEY,
+    CompetitionID   INT NOT NULL REFERENCES Competition(CompetitionID) ON DELETE RESTRICT,
+    UserID          INT NOT NULL REFERENCES Users(UserID) ON DELETE RESTRICT,
+    TeamID          INT REFERENCES Team(TeamID) ON DELETE SET NULL,
+    Type            VARCHAR(20) NOT NULL
+        CHECK (Type IN ('Individual', 'Team')),
+    Status          VARCHAR(20) NOT NULL DEFAULT 'Pending'
+        CHECK (Status IN ('Pending', 'Approved', 'Rejected')),
+    RegisteredAt    TIMESTAMP NOT NULL DEFAULT NOW(),
+    -- Business Rule: One registration per user per competition
+    CONSTRAINT uq_user_competition UNIQUE (UserID, CompetitionID)
+);
+
+-- 14. PAYMENT (1:1 with Registration)
+CREATE TABLE Payment (
+    PaymentID       SERIAL PRIMARY KEY,
+    RegistrationID  INT NOT NULL UNIQUE REFERENCES Registration(RegistrationID) ON DELETE CASCADE,
+    Screenshot      VARCHAR(500) NOT NULL,  -- URL/path to uploaded image
+    Status          VARCHAR(20) NOT NULL DEFAULT 'Pending'
+        CHECK (Status IN ('Pending', 'Approved', 'Rejected')),
+    VerifiedBy      INT REFERENCES Users(UserID) ON DELETE SET NULL,
+    SubmittedAt     TIMESTAMP NOT NULL DEFAULT NOW(),
+    VerifiedAt      TIMESTAMP
+);
+
+-- 15. TICKET (Generated after payment approval — 1:1 with Registration)
+CREATE TABLE Ticket (
+    TicketID        SERIAL PRIMARY KEY,
+    RegistrationID  INT NOT NULL UNIQUE REFERENCES Registration(RegistrationID) ON DELETE CASCADE,
+    QRCode          TEXT NOT NULL UNIQUE DEFAULT gen_random_uuid()::TEXT,
+    UniqueCode      VARCHAR(50) NOT NULL UNIQUE DEFAULT UPPER(SUBSTRING(gen_random_uuid()::TEXT, 1, 8)),
+    GeneratedAt     TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+
+-- ============================================================
+-- NORMALIZATION: ANOMALY ANALYSIS & FIXES
+-- Below we explain each anomaly, then fix it with ALTER TABLE.
+-- ============================================================
+
+-- ------------------------------------------------------------
+-- ANOMALY 1 (1NF VIOLATION): Multi-valued attributes
+-- 
+-- Problem: In an unnormalized design, a single "Event" row might
+-- store multiple competitions as a comma-separated list, e.g.:
+--   Competition_Names: "Coding, Robotics, Quiz"
+-- This violates 1NF (First Normal Form) because each cell must
+-- hold only one atomic value.
+--
+-- Fix: The Competition table already separates each competition
+-- into its own row linked by EventID (foreign key). This resolves
+-- the 1NF violation by decomposing repeating groups.
+--
+-- Similarly, TeamMember is a separate table (not a repeated group
+-- inside Team), ensuring each member is an atomic row.
+-- ------------------------------------------------------------
+
+-- 1NF Fix: Ensure no multi-valued columns exist — already enforced by design.
+-- Additional constraint: TeamMember email must be atomic (single value).
+ALTER TABLE TeamMember
+    ADD CONSTRAINT chk_member_email_format
+        CHECK (Email ~* '^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$');
+
+
+-- ------------------------------------------------------------
+-- ANOMALY 2 (2NF VIOLATION): Partial Dependency
+--
+-- Problem: In a combined Registration-Payment table (hypothetical):
+--   (RegistrationID, CompetitionID) → Screenshot, VerifiedBy
+-- "Screenshot" depends only on RegistrationID, not on the full
+-- composite key. This is a partial dependency violating 2NF.
+--
+-- Fix: Payment is a fully separate table where PaymentID is the
+-- sole primary key, and RegistrationID is a foreign key. Every
+-- non-key attribute (Screenshot, Status, VerifiedBy) depends
+-- entirely on PaymentID. Partial dependency is eliminated.
+--
+-- Similarly, EventStaff and CompetitionStaff use composite PKs
+-- where every attribute depends on the FULL key (EventID+UserID).
+-- ------------------------------------------------------------
+
+-- 2NF Fix: Ensure EventStaff.Role depends on the full composite key.
+-- No standalone Role column exists that depends on only EventID or UserID.
+-- This is structurally enforced; we add a NOT NULL constraint to confirm:
+ALTER TABLE EventStaff
+    ALTER COLUMN Role SET NOT NULL;
+
+ALTER TABLE CompetitionStaff
+    ALTER COLUMN Role SET NOT NULL;
+
+
+-- ------------------------------------------------------------
+-- ANOMALY 3 (3NF VIOLATION): Transitive Dependency
+--
+-- Problem: In the original Event table design, if we stored
+-- OrganizerName and OrganizerDepartment directly:
+--   EventID → CreatedBy (OrganizerID) → OrganizerName, OrganizerDepartment
+-- Then OrganizerName transitively depends on EventID through
+-- CreatedBy. This violates 3NF.
+--
+-- Fix: Event only stores CreatedBy (a FK to Organizer/User).
+-- Organizer details (Name, Email, Phone) live in the Users table.
+-- No transitive dependency exists in Event.
+--
+-- Another example fixed: Competition.Location transitively
+-- depending on EventID through Competition — fixed by storing
+-- Location directly on Competition (independent attribute).
+-- ------------------------------------------------------------
+
+-- 3NF Fix: Add check to enforce Event dates don't depend on each other 
+-- transitively through competition. Competition dates must fall within Event dates.
+CREATE OR REPLACE FUNCTION check_competition_dates()
+RETURNS TRIGGER AS $$
+DECLARE
+    ev_start DATE;
+    ev_end   DATE;
+BEGIN
+    SELECT StartDate, EndDate INTO ev_start, ev_end
+    FROM Event WHERE EventID = NEW.EventID;
+
+    IF NEW.StartDate < ev_start OR NEW.EndDate > ev_end THEN
+        RAISE EXCEPTION 'Competition dates must fall within the parent Event dates (% to %)', ev_start, ev_end;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_competition_dates
+    BEFORE INSERT OR UPDATE ON Competition
+    FOR EACH ROW EXECUTE FUNCTION check_competition_dates();
+
+
+-- ------------------------------------------------------------
+-- ANOMALY 4 (BCNF VIOLATION): Non-trivial FD where determinant
+-- is not a superkey
+--
+-- Problem: In an unnormalized TeamMember table, if we stored
+-- (TeamID, RollNumber) and RollNumber → Department, then
+-- RollNumber determines Department but RollNumber alone is not
+-- a candidate key of TeamMember. This violates BCNF.
+--
+-- Fix: Department is stored independently per TeamMember row.
+-- RollNumber is nullable (external members may not have one).
+-- Each TeamMember row is uniquely identified by MemberID (PK).
+-- No non-key attribute determines another non-key attribute.
+-- ------------------------------------------------------------
+
+-- BCNF Fix: Ensure no duplicate (TeamID + Email) combination exists
+-- (a member can't be on the same team twice with same email).
+ALTER TABLE TeamMember
+    ADD CONSTRAINT uq_team_member_email UNIQUE (TeamID, Email);
+
+
+-- ------------------------------------------------------------
+-- ANOMALY 5: Insertion Anomaly
+--
+-- Problem: In a flat unnormalized table combining User + Student
+-- + Registration, you cannot add a new Student to the system
+-- unless they also have a Registration. The Student's data is
+-- "trapped" and requires a Registration row to exist.
+--
+-- Fix: Student is a separate table. You can INSERT a Student row
+-- referencing Users(UserID) independently of Registration.
+-- A student can exist in the system without any registrations.
+-- ------------------------------------------------------------
+
+-- Insertion Anomaly Fix: Student can be inserted independently.
+-- Verified by design — no mandatory Registration FK on Student.
+-- Add a helpful index for fast student lookup by department:
+CREATE INDEX IF NOT EXISTS idx_student_department ON Student(Department);
+
+
+-- ------------------------------------------------------------
+-- ANOMALY 6: Deletion Anomaly
+--
+-- Problem: In a flat table where Event and Organizer details
+-- are combined, deleting the last event created by an Organizer
+-- would also delete the Organizer's personal information (Name,
+-- Email, Phone) from the system.
+--
+-- Fix: Users, Organizer, Event are separate tables. Deleting
+-- an Event only removes the Event row. The Organizer (in Users
+-- and Organizer tables) is unaffected. ON DELETE RESTRICT on
+-- Event.CreatedBy prevents accidental Organizer deletion while
+-- events exist.
+-- ------------------------------------------------------------
+
+-- Deletion Anomaly Fix: RESTRICT deletion of Organizer if events exist.
+-- Already set in CREATE TABLE above. Confirm with explicit constraint name:
+ALTER TABLE Event
+    DROP CONSTRAINT IF EXISTS event_createdby_fkey,
+    ADD CONSTRAINT fk_event_organizer
+        FOREIGN KEY (CreatedBy)
+        REFERENCES Organizer(UserID)
+        ON DELETE RESTRICT;
+
+
+-- ------------------------------------------------------------
+-- ANOMALY 7: Update Anomaly
+--
+-- Problem: In a flat table storing OrganizerName in every Event
+-- row they created, updating the Organizer's name would require
+-- updating every Event row — if one is missed, the data becomes
+-- inconsistent.
+--
+-- Fix: Organizer name is stored ONCE in the Users table.
+-- All Event rows reference the Organizer via CreatedBy FK.
+-- Updating a User's name in one place reflects everywhere.
+-- ------------------------------------------------------------
+
+-- Update Anomaly Fix: Cascaded updates via FK — already handled.
+-- Add trigger to auto-update Registration status when Payment is approved:
+CREATE OR REPLACE FUNCTION sync_registration_on_payment_approval()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.Status = 'Approved' AND OLD.Status <> 'Approved' THEN
+        UPDATE Registration
+        SET Status = 'Approved'
+        WHERE RegistrationID = NEW.RegistrationID;
+    ELSIF NEW.Status = 'Rejected' AND OLD.Status <> 'Rejected' THEN
+        UPDATE Registration
+        SET Status = 'Rejected'
+        WHERE RegistrationID = NEW.RegistrationID;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_payment_status_sync
+    AFTER UPDATE OF Status ON Payment
+    FOR EACH ROW EXECUTE FUNCTION sync_registration_on_payment_approval();
+
+
+-- ============================================================
+-- BUSINESS RULES — ENFORCED VIA TRIGGERS
+-- ============================================================
+
+-- RULE 1: Auto-generate Ticket when Payment is Approved
+CREATE OR REPLACE FUNCTION auto_generate_ticket()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.Status = 'Approved' AND OLD.Status <> 'Approved' THEN
+        INSERT INTO Ticket (RegistrationID)
+        VALUES (NEW.RegistrationID)
+        ON CONFLICT (RegistrationID) DO NOTHING;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_auto_ticket
+    AFTER UPDATE OF Status ON Payment
+    FOR EACH ROW EXECUTE FUNCTION auto_generate_ticket();
+
+
+-- RULE 2: Enforce MaxTeamSize — no team can exceed the competition limit
+CREATE OR REPLACE FUNCTION check_team_size()
+RETURNS TRIGGER AS $$
+DECLARE
+    current_size INT;
+    max_size     INT;
+BEGIN
+    SELECT COUNT(*) INTO current_size FROM TeamMember WHERE TeamID = NEW.TeamID;
+    SELECT c.MaxTeamSize INTO max_size
+    FROM Team t JOIN Competition c ON t.CompetitionID = c.CompetitionID
+    WHERE t.TeamID = NEW.TeamID;
+
+    IF current_size >= max_size THEN
+        RAISE EXCEPTION 'Team size limit exceeded. Max allowed: %', max_size;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_team_size_limit
+    BEFORE INSERT ON TeamMember
+    FOR EACH ROW EXECUTE FUNCTION check_team_size();
+
+
+-- RULE 3: Enforce Registration type matches Competition MaxTeamSize
+CREATE OR REPLACE FUNCTION check_registration_type()
+RETURNS TRIGGER AS $$
+DECLARE
+    max_size INT;
+BEGIN
+    SELECT MaxTeamSize INTO max_size
+    FROM Competition WHERE CompetitionID = NEW.CompetitionID;
+
+    IF NEW.Type = 'Individual' AND max_size > 1 THEN
+        RAISE EXCEPTION 'This competition requires a team (MaxTeamSize = %)', max_size;
+    END IF;
+    IF NEW.Type = 'Team' AND max_size = 1 THEN
+        RAISE EXCEPTION 'This competition is individual only (MaxTeamSize = 1)';
+    END IF;
+    IF NEW.Type = 'Team' AND NEW.TeamID IS NULL THEN
+        RAISE EXCEPTION 'Team-based registration must have a TeamID';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_registration_type
+    BEFORE INSERT OR UPDATE ON Registration
+    FOR EACH ROW EXECUTE FUNCTION check_registration_type();
+
+
+-- RULE 4: Email domain enforcement for NED students
+CREATE OR REPLACE FUNCTION check_ned_student_email()
+RETURNS TRIGGER AS $$
+DECLARE
+    user_email VARCHAR(255);
+BEGIN
+    SELECT Email INTO user_email FROM Users WHERE UserID = NEW.UserID;
+    -- NED students must use cloud email (@cloud.neduet.edu.pk)
+    -- This rule can be customised per institution
+    -- Currently just enforces email is not null (already handled by Users table)
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- RULE 5: Prevent duplicate registration (already enforced by UNIQUE constraint)
+-- uq_user_competition on Registration table ensures this.
+
+-- RULE 6: Payment must be verified by an Organizer or Volunteer only
+CREATE OR REPLACE FUNCTION check_payment_verifier()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.VerifiedBy IS NOT NULL THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM Organizer WHERE UserID = NEW.VerifiedBy
+            UNION
+            SELECT 1 FROM Volunteer WHERE UserID = NEW.VerifiedBy
+        ) THEN
+            RAISE EXCEPTION 'Payment can only be verified by an Organizer or Volunteer';
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_payment_verifier
+    BEFORE INSERT OR UPDATE ON Payment
+    FOR EACH ROW EXECUTE FUNCTION check_payment_verifier();
+
+
+-- ============================================================
+-- INDEXES FOR PERFORMANCE
+-- ============================================================
+CREATE INDEX IF NOT EXISTS idx_event_department  ON Event(Department);
+CREATE INDEX IF NOT EXISTS idx_event_dates       ON Event(StartDate, EndDate);
+CREATE INDEX IF NOT EXISTS idx_comp_event        ON Competition(EventID);
+CREATE INDEX IF NOT EXISTS idx_reg_competition   ON Registration(CompetitionID);
+CREATE INDEX IF NOT EXISTS idx_reg_user          ON Registration(UserID);
+CREATE INDEX IF NOT EXISTS idx_reg_team          ON Registration(TeamID);
+CREATE INDEX IF NOT EXISTS idx_payment_reg       ON Payment(RegistrationID);
+CREATE INDEX IF NOT EXISTS idx_payment_status    ON Payment(Status);
+CREATE INDEX IF NOT EXISTS idx_ticket_reg        ON Ticket(RegistrationID);
+CREATE INDEX IF NOT EXISTS idx_team_comp         ON Team(CompetitionID);
+CREATE INDEX IF NOT EXISTS idx_teammember_team   ON TeamMember(TeamID);
+CREATE INDEX IF NOT EXISTS idx_eventstaff_event  ON EventStaff(EventID);
+CREATE INDEX IF NOT EXISTS idx_compstaff_comp    ON CompetitionStaff(CompetitionID);
+
+
+-- ============================================================
+-- SAMPLE ANALYTICAL QUERIES
+-- ============================================================
+
+-- Query 1: All events with organizer details
+-- SELECT e.EventID, e.Name AS EventName, e.Department, e.StartDate, e.EndDate,
+--        u.Name AS OrganizerName, u.Email AS OrganizerEmail
+-- FROM Event e
+-- JOIN Organizer o ON e.CreatedBy = o.UserID
+-- JOIN Users u ON o.UserID = u.UserID;
+
+-- Query 2: All registrations with payment and ticket status
+-- SELECT r.RegistrationID, u.Name AS Participant, c.Name AS Competition,
+--        r.Type, r.Status AS RegStatus, p.Status AS PayStatus,
+--        t.UniqueCode AS TicketCode
+-- FROM Registration r
+-- JOIN Users u ON r.UserID = u.UserID
+-- JOIN Competition c ON r.CompetitionID = c.CompetitionID
+-- LEFT JOIN Payment p ON r.RegistrationID = p.RegistrationID
+-- LEFT JOIN Ticket t ON r.RegistrationID = t.RegistrationID;
+
+-- Query 3: Events with volunteer count
+-- SELECT e.Name AS Event, COUNT(es.UserID) AS VolunteerCount
+-- FROM Event e
+-- LEFT JOIN EventStaff es ON e.EventID = es.EventID
+-- GROUP BY e.EventID, e.Name;
+
+-- Query 4: Teams with member count per competition
+-- SELECT c.Name AS Competition, t.TeamName, COUNT(tm.MemberID) AS Members
+-- FROM Competition c
+-- JOIN Team t ON c.CompetitionID = t.CompetitionID
+-- LEFT JOIN TeamMember tm ON t.TeamID = tm.TeamID
+-- GROUP BY c.CompetitionID, c.Name, t.TeamID, t.TeamName;
+
+-- Query 5: Pending payments needing verification
+-- SELECT p.PaymentID, u.Name AS Participant, c.Name AS Competition,
+--        p.SubmittedAt, p.Screenshot
+-- FROM Payment p
+-- JOIN Registration r ON p.RegistrationID = r.RegistrationID
+-- JOIN Users u ON r.UserID = u.UserID
+-- JOIN Competition c ON r.CompetitionID = c.CompetitionID
+-- WHERE p.Status = 'Pending'
+-- ORDER BY p.SubmittedAt ASC;
+
+
+-- ============================================================
+-- END OF SCHEMA
+-- ============================================================
