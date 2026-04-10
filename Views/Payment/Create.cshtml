@@ -1,0 +1,23 @@
+@model EventManagementPortal.Models.PaymentCreateViewModel
+@{
+    ViewData["Title"] = "Upload Payment";
+}
+
+<h2 class="mb-4">Upload Payment</h2>
+
+<form asp-action="Create" method="post" enctype="multipart/form-data" class="card shadow-sm p-4">
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+    <input asp-for="RegistrationID" type="hidden" />
+
+    <div class="mb-3">
+        <label asp-for="Screenshot" class="form-label"></label>
+        <input asp-for="Screenshot" class="form-control" type="file" accept=".jpg,.jpeg,.png,.webp" />
+        <span asp-validation-for="Screenshot" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Submit payment proof</button>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

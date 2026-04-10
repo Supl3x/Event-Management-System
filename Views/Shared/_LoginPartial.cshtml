@@ -1,0 +1,33 @@
+﻿@using System.Security.Claims
+
+<ul class="navbar-nav nav-auth flex-row flex-wrap align-items-center gap-2 ms-md-2">
+@if (User.Identity?.IsAuthenticated ?? false)
+{
+    <li class="nav-item d-none d-lg-block">
+        <span class="nav-link py-1 small text-white-50">Signed in as</span>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link nav-user py-1" asp-controller="Dashboard" asp-action="Index" title="Dashboard">
+            @(User.FindFirstValue(ClaimTypes.GivenName) ?? User.Identity!.Name)
+        </a>
+    </li>
+    <li class="nav-item">
+        <span class="role-pill d-inline-block my-1" title="Roles">@string.Join(" · ", User.FindAll(ClaimTypes.Role).Select(c => c.Value))</span>
+    </li>
+    <li class="nav-item">
+        <form class="d-inline" asp-controller="Account" asp-action="Logout" method="post">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-link nav-link btn-logout border-0 py-1">Log out</button>
+        </form>
+    </li>
+}
+else
+{
+    <li class="nav-item">
+        <a class="btn btn-nav btn-nav-outline" asp-controller="Account" asp-action="Login">Log in</a>
+    </li>
+    <li class="nav-item">
+        <a class="btn btn-nav btn-nav-primary" asp-controller="Account" asp-action="Register">Register</a>
+    </li>
+}
+</ul>

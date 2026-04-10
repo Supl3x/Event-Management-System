@@ -1,0 +1,59 @@
+@model EventManagementPortal.Models.TeamRegistrationViewModel
+@{
+    ViewData["Title"] = "Team registration";
+    var count = Model.Members.Count;
+}
+
+<h2 class="mb-2">Register as a team</h2>
+<p class="text-muted mb-4">
+    <strong>@Model.CompetitionName</strong> requires exactly <strong>@count</strong> team member(s) (including you as leader).
+</p>
+
+<form asp-action="RegisterTeam" method="post" class="card shadow-sm p-4">
+    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+    <input type="hidden" asp-for="CompetitionID" />
+    <input type="hidden" asp-for="CompetitionName" />
+
+    <div class="mb-4">
+        <label asp-for="TeamName" class="form-label"></label>
+        <input asp-for="TeamName" class="form-control" />
+        <span asp-validation-for="TeamName" class="text-danger"></span>
+    </div>
+
+    <h5 class="mb-3">Team members</h5>
+    @for (var i = 0; i < Model.Members.Count; i++)
+    {
+        <div class="border rounded p-3 mb-3">
+            <p class="small text-muted mb-2">Member @(i + 1) @(i == 0 ? "(you — team leader)" : "")</p>
+            <div class="row g-2">
+                <div class="col-md-6 mb-2">
+                    <label asp-for="Members[i].Name" class="form-label"></label>
+                    <input asp-for="Members[i].Name" class="form-control" />
+                    <span asp-validation-for="Members[i].Name" class="text-danger"></span>
+                </div>
+                <div class="col-md-6 mb-2">
+                    <label asp-for="Members[i].Email" class="form-label"></label>
+                    <input asp-for="Members[i].Email" class="form-control" />
+                    <span asp-validation-for="Members[i].Email" class="text-danger"></span>
+                </div>
+                <div class="col-md-6 mb-2">
+                    <label asp-for="Members[i].RollNumber" class="form-label"></label>
+                    <input asp-for="Members[i].RollNumber" class="form-control" />
+                    <span asp-validation-for="Members[i].RollNumber" class="text-danger"></span>
+                </div>
+                <div class="col-md-6 mb-2">
+                    <label asp-for="Members[i].Department" class="form-label"></label>
+                    <input asp-for="Members[i].Department" class="form-control" />
+                    <span asp-validation-for="Members[i].Department" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+    }
+
+    <button type="submit" class="btn btn-primary">Submit team registration</button>
+    <a asp-controller="Competition" asp-action="Details" asp-route-id="@Model.CompetitionID" class="btn btn-outline-secondary ms-2">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

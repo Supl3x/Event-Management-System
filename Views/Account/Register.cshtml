@@ -1,0 +1,80 @@
+@model EventManagementPortal.Models.RegisterViewModel
+@{
+    ViewData["Title"] = "Register";
+}
+
+<div class="auth-panel" style="max-width: 520px;">
+<h2 class="mb-4">Create account</h2>
+<p class="text-muted small mb-3 text-center px-1">
+    Choose <strong>Student</strong> to join competitions. <strong>Organizer</strong> creates events and can verify payments. <strong>Volunteer</strong> can verify payments. <strong>Admin</strong> creates competitions only (payment rules in the DB require organizer/volunteer for verification).
+</p>
+
+<form asp-action="Register" method="post" class="card p-4 border-0">
+    <input type="hidden" asp-for="ReturnUrl" />
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    <div class="mb-3">
+        <label asp-for="Name" class="form-label"></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Email" class="form-label"></label>
+        <input asp-for="Email" class="form-control" autocomplete="username" />
+        <span asp-validation-for="Email" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Phone" class="form-label"></label>
+        <input asp-for="Phone" class="form-control" />
+        <span asp-validation-for="Phone" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Password" class="form-label"></label>
+        <input asp-for="Password" class="form-control" autocomplete="new-password" />
+        <span asp-validation-for="Password" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="ConfirmPassword" class="form-label"></label>
+        <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" />
+        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Role" class="form-label"></label>
+        <select asp-for="Role" asp-items="Model.RoleOptions" class="form-select" id="roleSelect"></select>
+        <span asp-validation-for="Role" class="text-danger"></span>
+    </div>
+    <div id="studentFields" class="border rounded p-3 mb-3 bg-light">
+        <div class="mb-3">
+            <label asp-for="RollNumber" class="form-label"></label>
+            <input asp-for="RollNumber" class="form-control" />
+            <span asp-validation-for="RollNumber" class="text-danger"></span>
+        </div>
+        <div class="mb-0">
+            <label asp-for="Department" class="form-label"></label>
+            <input asp-for="Department" class="form-control" />
+            <span asp-validation-for="Department" class="text-danger"></span>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100 py-2">Create account</button>
+    <p class="text-center text-muted small mt-3 mb-0">
+        Already registered? <a asp-action="Login">Log in</a>
+    </p>
+</form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const roleSelect = document.getElementById('roleSelect');
+            const studentFields = document.getElementById('studentFields');
+            function toggle() {
+                const isStudent = roleSelect.value === '@AppRoles.Student';
+                studentFields.style.display = isStudent ? 'block' : 'none';
+            }
+            roleSelect.addEventListener('change', toggle);
+            toggle();
+        })();
+    </script>
+}

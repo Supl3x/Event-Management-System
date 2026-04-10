@@ -1,0 +1,10 @@
+@{
+    ViewData["Title"] = "Admin Area";
+}
+
+<div class="alert alert-primary">
+    <h4 class="alert-heading">Admin hub</h4>
+    <p class="mb-2">Create competitions linked to an existing event. Payment verification is limited to organizers and volunteers in the database.</p>
+    <a asp-controller="Competition" asp-action="Create" class="btn btn-primary btn-sm">Create competition</a>
+    <a asp-controller="Event" asp-action="Index" class="btn btn-outline-secondary btn-sm ms-1">Browse events</a>
+</div>

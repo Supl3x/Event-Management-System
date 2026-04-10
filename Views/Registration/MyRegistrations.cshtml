@@ -1,0 +1,61 @@
+@model IEnumerable<EventManagementPortal.Models.MyRegistrationViewModel>
+@{
+    ViewData["Title"] = "My Registrations";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">My Registrations</h2>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        You have no registrations yet.
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>Competition</th>
+                    <th>Date</th>
+                    <th>Location</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.CompetitionName</td>
+                        <td>@item.CompetitionStartDate.ToString("dd MMM yyyy")</td>
+                        <td>@item.CompetitionLocation</td>
+                        <td>@item.RegistrationType</td>
+                        <td><span class="badge bg-secondary">@item.DisplayStatus</span></td>
+                        <td>
+                            <a asp-controller="Competition"
+                               asp-action="Details"
+                               asp-route-id="@item.CompetitionID"
+                               class="btn btn-sm btn-outline-primary">
+                                View
+                            </a>
+                            @if (item.CanUploadPayment)
+                            {
+                                <a asp-controller="Payment"
+                                   asp-action="Create"
+                                   asp-route-registrationId="@item.RegistrationID"
+                                   class="btn btn-sm btn-outline-success">
+                                    Upload payment
+                                </a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

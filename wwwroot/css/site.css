@@ -1,0 +1,306 @@
+/* Campus Events — theme (Bootstrap 5 variable overrides + layout) */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
+:root {
+  --bs-primary: #0d9488;
+  --bs-primary-rgb: 13, 148, 136;
+  --bs-link-color: #0f766e;
+  --bs-link-hover-color: #0d5c56;
+  --bs-body-bg: #f1f5f9;
+  --bs-body-color: #0f172a;
+  --bs-border-radius: 0.625rem;
+  --bs-border-radius-lg: 0.875rem;
+  --emp-navbar-bg: #0f172a;
+  --emp-navbar-border: rgba(255, 255, 255, 0.08);
+  --emp-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 4px 24px rgba(15, 23, 42, 0.06);
+  --emp-card-border: rgba(15, 23, 42, 0.06);
+}
+
+html {
+  font-size: 15px;
+  scroll-behavior: smooth;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.btn:focus,
+.btn:active:focus,
+.btn-link.nav-link:focus,
+.form-control:focus,
+.form-check-input:focus,
+.form-select:focus {
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+/* —— Navbar —— */
+.navbar-emp {
+  background: var(--emp-navbar-bg) !important;
+  border-bottom: 1px solid var(--emp-navbar-border);
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+}
+
+.navbar-emp .navbar-brand {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #fff !important;
+  font-size: 1.1rem;
+}
+
+.navbar-emp .navbar-brand .brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  background: linear-gradient(135deg, var(--bs-primary) 0%, #14b8a6 100%);
+  color: #fff;
+  font-size: 1rem;
+  margin-right: 0.5rem;
+}
+
+.navbar-emp .nav-link {
+  color: rgba(255, 255, 255, 0.82) !important;
+  font-weight: 500;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.75rem !important;
+  border-radius: 0.375rem;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.navbar-emp .nav-link:hover,
+.navbar-emp .nav-link:focus {
+  color: #fff !important;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.navbar-emp .navbar-toggler {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.navbar-emp .navbar-toggler-icon {
+  filter: invert(1);
+}
+
+/* —— Main —— */
+main[role='main'] {
+  flex: 1 0 auto;
+}
+
+main[role='main'] > h2:first-of-type,
+main[role='main'] > .d-flex > h2:first-of-type {
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--bs-body-color);
+  margin-bottom: 1.25rem;
+}
+
+/* —— Cards —— */
+.card {
+  border: 1px solid var(--emp-card-border);
+  box-shadow: var(--emp-shadow);
+  border-radius: var(--bs-border-radius-lg);
+  overflow: hidden;
+}
+
+.card .card-title {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* —— Tables —— */
+.table {
+  --bs-table-bg: transparent;
+}
+
+.table thead th {
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--bs-secondary-color);
+  border-bottom-width: 1px;
+}
+
+/* —— Forms —— */
+.form-control,
+.form-select {
+  border-color: #e2e8f0;
+}
+
+.form-control:hover,
+.form-select:hover {
+  border-color: #cbd5e1;
+}
+
+.form-label {
+  font-weight: 500;
+  color: #334155;
+  font-size: 0.9rem;
+}
+
+/* —— Alerts —— */
+.alert {
+  border: none;
+  border-radius: var(--bs-border-radius-lg);
+  box-shadow: var(--emp-shadow);
+}
+
+/* —— Badges —— */
+.badge {
+  font-weight: 600;
+  padding: 0.35em 0.65em;
+}
+
+/* —— Footer —— */
+.footer-emp {
+  flex-shrink: 0;
+  margin-top: auto;
+  background: #fff;
+  border-top: 1px solid var(--emp-card-border);
+  padding: 1.25rem 0;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.footer-emp a {
+  color: var(--bs-link-color);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.footer-emp a:hover {
+  text-decoration: underline;
+}
+
+/* —— Buttons in navbar (login partial) —— */
+.nav-auth .btn-nav {
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-radius: 0.5rem;
+  padding: 0.4rem 1rem;
+}
+
+.nav-auth .btn-nav-outline {
+  color: #fff !important;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: transparent;
+}
+
+.nav-auth .btn-nav-outline:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: #fff !important;
+}
+
+.nav-auth .btn-nav-primary {
+  background: var(--bs-primary);
+  border-color: var(--bs-primary);
+  color: #fff !important;
+}
+
+.nav-auth .btn-nav-primary:hover {
+  background: #0f766e;
+  border-color: #0f766e;
+  color: #fff !important;
+}
+
+.nav-auth .role-pill {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.9);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.nav-auth .nav-user {
+  color: rgba(255, 255, 255, 0.95) !important;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.nav-auth .btn-logout {
+  color: rgba(255, 255, 255, 0.75) !important;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  padding: 0.35rem 0.5rem !important;
+}
+
+.nav-auth .btn-logout:hover {
+  color: #fff !important;
+}
+
+/* —— Toast —— */
+.toast {
+  border: none;
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.15);
+  border-radius: var(--bs-border-radius-lg);
+}
+
+/* —— Home hero —— */
+.hero-strip {
+  background: linear-gradient(135deg, #0f172a 0%, #134e4a 55%, #0d9488 100%);
+  color: #fff;
+  border-radius: var(--bs-border-radius-lg);
+  padding: 1.75rem 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--emp-shadow);
+}
+
+.hero-strip h1 {
+  font-size: clamp(1.35rem, 2.5vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin: 0 0 0.35rem;
+}
+
+.hero-strip p {
+  margin: 0;
+  opacity: 0.88;
+  font-size: 0.95rem;
+  max-width: 36rem;
+}
+
+/* —— Centered auth / small forms —— */
+.auth-panel {
+  max-width: 440px;
+  margin: 0 auto;
+}
+
+.auth-panel > h2 {
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-bottom: 1.5rem;
+}
+
+.auth-panel .card {
+  border: 1px solid var(--emp-card-border);
+}
+
+/* —— Empty state —— */
+.empty-state {
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  color: #64748b;
+}

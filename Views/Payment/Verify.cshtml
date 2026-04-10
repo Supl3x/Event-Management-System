@@ -1,0 +1,58 @@
+@model IEnumerable<EventManagementPortal.Models.Payment>
+@{
+    ViewData["Title"] = "Verify Payments";
+}
+
+<h2 class="mb-4">Verify Payments</h2>
+
+@if (TempData["SuccessMessage"] is string ok)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">@ok<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+@if (TempData["ErrorMessage"] is string err)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">@err<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">No payments found.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Registration</th>
+                    <th>Screenshot</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    var badgeClass = item.Status == EventManagementPortal.Models.PaymentStatuses.Approved ? "bg-success"
+                        : item.Status == EventManagementPortal.Models.PaymentStatuses.Rejected ? "bg-danger" : "bg-warning text-dark";
+                    <tr>
+                        <td>@item.Registration!.User.Email</td>
+                        <td>#@item.RegistrationID</td>
+                        <td><a href="@item.Screenshot" target="_blank" class="btn btn-sm btn-outline-secondary">View</a></td>
+                        <td><span class="badge @badgeClass">@item.Status</span></td>
+                        <td>
+                            @if (item.Status == EventManagementPortal.Models.PaymentStatuses.Pending)
+                            {
+                                <form asp-action="VerifyPayment" method="post">
+                                    <input type="hidden" name="paymentId" value="@item.PaymentID" />
+                                    <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

@@ -1,0 +1,37 @@
+@model IEnumerable<EventManagementPortal.Models.Competition>
+@{
+    ViewData["Title"] = "Competitions";
+}
+
+@if (TempData["SuccessMessage"] is string success)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @success
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <h2 class="mb-0">Competitions</h2>
+    @if (User.IsInRole(AppRoles.Admin))
+    {
+        <a asp-action="Create" class="btn btn-primary">Create competition</a>
+    }
+</div>
+
+<div class="row g-4">
+    @foreach (var competition in Model)
+    {
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">@competition.Name</h5>
+                    <p class="card-text text-muted small mb-2">Event: @competition.Event.Name</p>
+                    <p class="card-text mb-2"><strong>Starts:</strong> @competition.StartDate.ToString("dd MMM yyyy")</p>
+                    <p class="card-text mb-4"><strong>Location:</strong> @competition.Location</p>
+                    <a asp-action="Details" asp-route-id="@competition.CompetitionID" class="btn btn-primary mt-auto">View Details</a>
+                </div>
+            </div>
+        </div>
+    }
+</div>

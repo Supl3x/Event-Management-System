@@ -1,0 +1,11 @@
+@{
+    ViewData["Title"] = "Student Area";
+}
+
+<div class="alert alert-info">
+    <h4 class="alert-heading">Student hub</h4>
+    <p class="mb-2">Open a competition and use <strong>Register for this competition</strong>, then upload payment if needed.</p>
+    <a asp-controller="Competition" asp-action="Index" class="btn btn-info btn-sm text-dark">Browse competitions</a>
+    <a asp-controller="Registration" asp-action="MyRegistrations" class="btn btn-outline-info btn-sm ms-1 text-dark">My registrations</a>
+    <a asp-controller="Payment" asp-action="MyPayments" class="btn btn-outline-secondary btn-sm ms-1">My payments</a>
+</div>

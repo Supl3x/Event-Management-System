@@ -1,0 +1,11 @@
+@{
+    ViewData["Title"] = "Organizer Area";
+}
+
+<div class="alert alert-success">
+    <h4 class="alert-heading">Organizer hub</h4>
+    <p class="mb-2">Create events first. An admin can then add competitions under your event.</p>
+    <a asp-controller="Event" asp-action="Create" class="btn btn-success btn-sm">Create event</a>
+    <a asp-controller="Event" asp-action="Index" class="btn btn-outline-success btn-sm ms-1">All events</a>
+    <a asp-controller="Competition" asp-action="Index" class="btn btn-outline-secondary btn-sm ms-1">View competitions</a>
+</div>

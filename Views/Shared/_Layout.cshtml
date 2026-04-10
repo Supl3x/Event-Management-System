@@ -1,0 +1,132 @@
+﻿@inject IConfiguration Configuration
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Campus Events</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/EventManagementPortal.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-md navbar-dark navbar-emp">
+            <div class="container">
+                <a class="navbar-brand d-flex align-items-center" asp-controller="Home" asp-action="Index">
+                    <span class="brand-mark" aria-hidden="true">⌁</span>
+                    <span>Campus Events</span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+                        aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="mainNav">
+                    <ul class="navbar-nav me-auto mb-2 mb-md-0 gap-md-1">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Home" asp-action="Index">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Event" asp-action="Index">Events</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Competition" asp-action="Index">Competitions</a>
+                        </li>
+                        @if (User.Identity?.IsAuthenticated ?? false)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+                            </li>
+                            @if (User.IsInRole(AppRoles.Admin))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Event" asp-action="Index">All events</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Competition" asp-action="Create">New competition</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Dashboard" asp-action="Admin">Admin hub</a>
+                                </li>
+                            }
+                            @if (User.IsInRole(AppRoles.Organizer) || User.IsInRole(AppRoles.Volunteer))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Payment" asp-action="Verify">Verify payments</a>
+                                </li>
+                            }
+                            @if (User.IsInRole(AppRoles.Organizer))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Event" asp-action="Create">New event</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Dashboard" asp-action="Organizer">Organizer hub</a>
+                                </li>
+                            }
+                            @if (User.IsInRole(AppRoles.Volunteer))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Dashboard" asp-action="Volunteer">Volunteer hub</a>
+                                </li>
+                            }
+                            @if (User.IsInRole(AppRoles.Student))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Registration" asp-action="MyRegistrations">My registrations</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Payment" asp-action="MyPayments">My payments</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Dashboard" asp-action="Student">Student hub</a>
+                                </li>
+                            }
+                        }
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                        </li>
+                    </ul>
+                    <partial name="_LoginPartial" />
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container py-4 py-md-5">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="footer-emp">
+        <div class="container d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
+            <span>&copy; 2026 Campus Events</span>
+            <a asp-controller="Home" asp-action="Privacy">Privacy</a>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@@supabase/supabase-js@2"></script>
+    <script>
+        window.supabaseRealtimeConfig = {
+            url: "@Configuration["Supabase:Url"]",
+            anonKey: "@Configuration["Supabase:AnonKey"]"
+        };
+    </script>
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1080">
+        <div id="liveNotificationToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Notification</strong>
+                <small>Now</small>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="liveNotificationToastBody">New update received.</div>
+        </div>
+    </div>
+    <script src="~/js/realtime.js" asp-append-version="true"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
