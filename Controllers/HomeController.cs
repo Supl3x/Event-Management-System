@@ -17,16 +17,17 @@ public class HomeController : Controller
         _context = context;
     }
 
+    
     public async Task<IActionResult> Index()
-    {
-        var competitions = await _context.Competitions
-            .AsNoTracking()
-            .Include(c => c.Event)
-            .OrderBy(c => c.StartDate)
-            .ToListAsync();
+{
+    // Yahan check karein ke aap _context.Events use kar rahe hain, _context.Competitions nahi
+    var events = await _context.Events
+        .OrderByDescending(e => e.StartDate)
+        .Take(3)
+        .ToListAsync();
 
-        return View(competitions);
-    }
+    return View(events); // Ye 'events' bhejega jo View se match karega
+}
 
     public IActionResult Privacy()
     {
@@ -39,3 +40,4 @@ public class HomeController : Controller
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 }
+

@@ -1,58 +1,217 @@
 @model IEnumerable<EventManagementPortal.Models.Payment>
 @{
-    ViewData["Title"] = "Verify Payments";
+    ViewData["Title"] = "Financial Verification";
 }
 
-<h2 class="mb-4">Verify Payments</h2>
+<style>
+    /* Premium Table Styling */
+    .terminal-card {
+        background: var(--card-bg);
+        border: 1px solid var(--glass-border);
+        backdrop-filter: blur(15px);
+        border-radius: 24px;
+        overflow: hidden;
+    }
 
-@if (TempData["SuccessMessage"] is string ok)
-{
-    <div class="alert alert-success alert-dismissible fade show" role="alert">@ok<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-}
-@if (TempData["ErrorMessage"] is string err)
-{
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">@err<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-}
+    .table-space {
+        color: white !important;
+        margin-bottom: 0;
+    }
 
-@if (!Model.Any())
-{
-    <div class="alert alert-info">No payments found.</div>
-}
-else
-{
-    <div class="table-responsive">
-        <table class="table table-striped align-middle">
-            <thead>
-                <tr>
-                    <th>User</th>
-                    <th>Registration</th>
-                    <th>Screenshot</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model)
-                {
-                    var badgeClass = item.Status == EventManagementPortal.Models.PaymentStatuses.Approved ? "bg-success"
-                        : item.Status == EventManagementPortal.Models.PaymentStatuses.Rejected ? "bg-danger" : "bg-warning text-dark";
-                    <tr>
-                        <td>@item.Registration!.User.Email</td>
-                        <td>#@item.RegistrationID</td>
-                        <td><a href="@item.Screenshot" target="_blank" class="btn btn-sm btn-outline-secondary">View</a></td>
-                        <td><span class="badge @badgeClass">@item.Status</span></td>
-                        <td>
-                            @if (item.Status == EventManagementPortal.Models.PaymentStatuses.Pending)
-                            {
-                                <form asp-action="VerifyPayment" method="post">
-                                    <input type="hidden" name="paymentId" value="@item.PaymentID" />
-                                    <button type="submit" class="btn btn-sm btn-success">Approve</button>
-                                </form>
-                            }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+    .table-space thead {
+        background: rgba(255, 255, 255, 0.03);
+        border-bottom: 1px solid var(--glass-border);
+    }
+
+    .table-space th {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-weight: 500;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 1px;
+        padding: 20px !important;
+        color: var(--cyan-500);
+        border: none;
+    }
+
+    .table-space td {
+        padding: 18px 20px !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 300;
+        vertical-align: middle;
+    }
+
+    .row-hover:hover {
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Action Buttons */
+    .btn-action-sm {
+        border-radius: 8px;
+        padding: 6px 14px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        transition: 0.3s;
+    }
+
+    .btn-verify {
+        background: var(--cyan-500);
+        color: var(--navy-900);
+        border: none;
+    }
+
+    .btn-verify:hover {
+        background: var(--cyan-400);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(6, 182, 212, 0.3);
+    }
+
+    /* Screenshot Preview Link */
+    .preview-link {
+        color: var(--blue-400);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: 0.2s;
+    }
+
+    .preview-link:hover {
+        color: white;
+    }
+
+    /* Modal Styling */
+    .modal-content-glass {
+        background: #0f172a !important;
+        border: 1px solid var(--glass-border) !important;
+        border-radius: 20px !important;
+        backdrop-filter: blur(20px);
+    }
+</style>
+
+<div class="container py-5 mt-3">
+    @* ── Header Area ── *@
+    <div class="row align-items-center mb-5">
+        <div class="col-md-8">
+            <div class="hero-badge">
+                <div class="live-dot"></div> Financial Clearance Terminal
+            </div>
+            <h1 class="h-jakarta fw-bold text-white display-5">Verify <span class="text-cyan">Payments</span></h1>
+            <p class="text-muted s-grotesk fs-5">Audit student transaction proofs and unlock event access nodes.</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <div class="s-grotesk text-muted small">
+                TOTAL PENDING: <span class="text-warning fw-bold">@Model.Count(p => p.Status == EventManagementPortal.Models.PaymentStatuses.Pending)</span>
+            </div>
+        </div>
     </div>
+
+    @* ── Notifications ── *@
+    @if (TempData["SuccessMessage"] is string ok)
+    {
+        <div class="alert alert-dismissible fade show glass-panel border-success mb-4" role="alert">
+            <div class="d-flex align-items-center gap-3">
+                <i class="fa-solid fa-circle-check text-success"></i>
+                <div class="text-white s-grotesk">@ok</div>
+                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="alert"></button>
+            </div>
+        </div>
+    }
+
+    @* ── Payments Table ── *@
+    <div class="terminal-card shadow-lg">
+        @if (!Model.Any())
+        {
+            <div class="text-center py-5">
+                <div class="stat-circle icon-blue mx-auto mb-3" style="width:70px; height:70px;">
+                    <i class="fa-solid fa-inbox"></i>
+                </div>
+                <h4 class="text-white">All Clear</h4>
+                <p class="text-muted s-grotesk">No pending payments require verification.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-space align-middle">
+                    <thead>
+                        <tr>
+                            <th>Student / Email</th>
+                            <th>Reg ID</th>
+                            <th>Proof of Payment</th>
+                            <th>Current Status</th>
+                            <th class="text-end">Operation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            var badgeClass = item.Status == EventManagementPortal.Models.PaymentStatuses.Approved ? "badge-open" // Neon Green from your CSS
+                                            : item.Status == EventManagementPortal.Models.PaymentStatuses.Rejected ? "badge-few" // Reddish-Orange from your CSS
+                                            : "badge-live"; // Cyan from your CSS
+
+                            <tr class="row-hover">
+                                <td>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="user-avatar-sm" style="width:32px; height:32px;">@item.Registration!.User.Email[0].ToString().ToUpper()</div>
+                                        <span class="text-white">@item.Registration!.User.Email</span>
+                                    </div>
+                                </td>
+                                <td><span class="text-muted">#@item.RegistrationID</span></td>
+                                <td>
+                                    <a href="#" class="preview-link" onclick="openReceipt('@item.Screenshot')">
+                                        <i class="fa-solid fa-image"></i> View Receipt
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge @badgeClass">@item.Status</span>
+                                </td>
+                                <td class="text-end">
+                                    @if (item.Status == EventManagementPortal.Models.PaymentStatuses.Pending)
+                                    {
+                                        <form asp-action="VerifyPayment" method="post" class="d-inline">
+                                            <input type="hidden" name="paymentId" value="@item.PaymentID" />
+                                            <button type="submit" class="btn btn-action-sm btn-verify">
+                                                <i class="fa-solid fa-check me-1"></i> Authorize
+                                            </button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small italic">Processed</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@* ── Image Preview Modal ── *@
+<div class="modal fade" id="receiptModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content modal-content-glass">
+            <div class="modal-header border-bottom border-white border-opacity-10">
+                <h5 class="modal-title text-white h-jakarta">Payment Proof Preview</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <img id="receiptImg" src="" class="img-fluid rounded-3 shadow-lg" style="max-height: 70vh;" alt="Receipt">
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openReceipt(url) {
+            document.getElementById('receiptImg').src = url;
+            var myModal = new bootstrap.Modal(document.getElementById('receiptModal'));
+            myModal.show();
+        }
+    </script>
 }

@@ -1,41 +1,176 @@
 @model EventManagementPortal.Models.EventCreateViewModel
 @{
-    ViewData["Title"] = "Create Event";
+    ViewData["Title"] = "Initialise Event";
 }
 
-<h2 class="mb-4">Create Event</h2>
+<style>
+    /* Premium Form Styling */
+    .launch-terminal {
+        background: var(--card-bg);
+        border: 1px solid var(--glass-border);
+        backdrop-filter: blur(15px);
+        border-radius: 28px;
+        padding: 3rem;
+        position: relative;
+        overflow: hidden;
+    }
 
-<form asp-action="Create" method="post" class="card shadow-sm p-4">
-    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+    .form-label-custom {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 8px;
+        display: block;
+    }
 
-    <div class="mb-3">
-        <label asp-for="Name" class="form-label"></label>
-        <input asp-for="Name" class="form-control" autocomplete="off" />
-        <span asp-validation-for="Name" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="Department" class="form-label"></label>
-        <input asp-for="Department" class="form-control" autocomplete="organization" />
-        <span asp-validation-for="Department" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="Location" class="form-label"></label>
-        <input asp-for="Location" class="form-control" autocomplete="off" />
-        <span asp-validation-for="Location" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="StartDate" class="form-label"></label>
-        <input asp-for="StartDate" class="form-control" type="date" />
-        <span asp-validation-for="StartDate" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="EndDate" class="form-label"></label>
-        <input asp-for="EndDate" class="form-control" type="date" />
-        <span asp-validation-for="EndDate" class="text-danger"></span>
-    </div>
+    .form-control-space {
+        background: rgba(255, 255, 255, 0.04) !important;
+        border: 1px solid var(--glass-border) !important;
+        color: white !important;
+        border-radius: 14px !important;
+        padding: 12px 18px !important;
+        font-family: 'Space Grotesk', sans-serif !important;
+        transition: all 0.3s ease !important;
+    }
 
-    <button type="submit" class="btn btn-primary">Create</button>
-</form>
+    .form-control-space:focus {
+        background: rgba(255, 255, 255, 0.07) !important;
+        border-color: var(--cyan-500) !important;
+        box-shadow: 0 0 15px rgba(6, 182, 212, 0.15) !important;
+        outline: none;
+    }
+
+    /* Fix for Date Picker Icon in Dark Theme */
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+        opacity: 0.6;
+        cursor: pointer;
+    }
+
+    .validation-summary-box {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        border-radius: 12px;
+        color: #fca5a5;
+        padding: 1rem;
+    }
+
+    .btn-launch {
+        background: linear-gradient(135deg, var(--blue-600) 0%, var(--cyan-500) 100%);
+        color: white;
+        border: none;
+        padding: 14px 40px;
+        border-radius: 100px;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-weight: 600;
+        letter-spacing: 1px;
+        transition: all 0.3s ease;
+        width: 100%;
+        margin-top: 1rem;
+    }
+
+    .btn-launch:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(6, 182, 212, 0.3);
+        color: white;
+    }
+
+    .input-group-text-space {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--glass-border);
+        border-right: none;
+        color: var(--cyan-500);
+        border-radius: 14px 0 0 14px;
+    }
+</style>
+
+<div class="container py-5 mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            
+            @* ── Header ── *@
+            <div class="text-center mb-5">
+                <div class="hero-badge mx-auto">
+                    <div class="live-dot"></div> Configuration Phase
+                </div>
+                <h1 class="h-jakarta fw-bold text-white display-5">Initialise New <span class="text-cyan">Event</span></h1>
+                <p class="text-muted s-grotesk">Fill in the deployment details to register your event on the grid.</p>
+            </div>
+
+            @* ── The Terminal (Form) ── *@
+            <div class="launch-terminal shadow-lg">
+                <div class="hero-glow" style="top: -100px; right: -100px; width: 300px; height: 300px; opacity: 0.4;"></div>
+                
+                <form asp-action="Create" method="post">
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div asp-validation-summary="All" class="validation-summary-box mb-4 small"></div>
+                    }
+
+                    <div class="row g-4">
+                        @* Event Name *@
+                        <div class="col-12">
+                            <label asp-for="Name" class="form-label-custom">Event Designation</label>
+                            <div class="input-group">
+                                <span class="input-group-text input-group-text-space"><i class="fa-solid fa-tag"></i></span>
+                                <input asp-for="Name" class="form-control form-control-space" placeholder="e.g. National Hackathon 2026" autocomplete="off" />
+                            </div>
+                            <span asp-validation-for="Name" class="text-danger small mt-1 d-block"></span>
+                        </div>
+
+                        @* Department *@
+                        <div class="col-md-6">
+                            <label asp-for="Department" class="form-label-custom">Host Department</label>
+                            <div class="input-group">
+                                <span class="input-group-text input-group-text-space"><i class="fa-solid fa-building-columns"></i></span>
+                                <input asp-for="Department" class="form-control form-control-space" placeholder="e.g. SEECS" autocomplete="organization" />
+                            </div>
+                            <span asp-validation-for="Department" class="text-danger small mt-1 d-block"></span>
+                        </div>
+
+                        @* Location *@
+                        <div class="col-md-6">
+                            <label asp-for="Location" class="form-label-custom">Deployment Venue</label>
+                            <div class="input-group">
+                                <span class="input-group-text input-group-text-space"><i class="fa-solid fa-location-crosshairs"></i></span>
+                                <input asp-for="Location" class="form-control form-control-space" placeholder="e.g. Jinnah Auditorium" autocomplete="off" />
+                            </div>
+                            <span asp-validation-for="Location" class="text-danger small mt-1 d-block"></span>
+                        </div>
+
+                        @* Start Date *@
+                        <div class="col-md-6">
+                            <label asp-for="StartDate" class="form-label-custom">Activation Date</label>
+                            <input asp-for="StartDate" class="form-control form-control-space" type="date" />
+                            <span asp-validation-for="StartDate" class="text-danger small mt-1 d-block"></span>
+                        </div>
+
+                        @* End Date *@
+                        <div class="col-md-6">
+                            <label asp-for="EndDate" class="form-label-custom">Deactivation Date</label>
+                            <input asp-for="EndDate" class="form-control form-control-space" type="date" />
+                            <span asp-validation-for="EndDate" class="text-danger small mt-1 d-block"></span>
+                        </div>
+
+                        @* Submit Button *@
+                        <div class="col-12 mt-5">
+                            <button type="submit" class="btn-launch shadow-glow">
+                                <i class="fa-solid fa-rocket me-2"></i> Launch Event Signal
+                            </button>
+                            <div class="text-center mt-3">
+                                <a asp-action="Index" class="text-muted text-decoration-none small s-grotesk">
+                                    <i class="fa-solid fa-chevron-left me-1"></i> Return to Registry
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

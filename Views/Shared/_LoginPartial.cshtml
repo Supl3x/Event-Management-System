@@ -1,33 +1,82 @@
 ﻿@using System.Security.Claims
 
-<ul class="navbar-nav nav-auth flex-row flex-wrap align-items-center gap-2 ms-md-2">
+<ul class="navbar-nav align-items-center gap-3">
 @if (User.Identity?.IsAuthenticated ?? false)
 {
-    <li class="nav-item d-none d-lg-block">
-        <span class="nav-link py-1 small text-white-50">Signed in as</span>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link nav-user py-1" asp-controller="Dashboard" asp-action="Index" title="Dashboard">
-            @(User.FindFirstValue(ClaimTypes.GivenName) ?? User.Identity!.Name)
+    <li class="nav-item dropdown position-relative" id="profileDropdownArea">
+        <a class="nav-link d-flex align-items-center gap-2 p-0" 
+           href="javascript:void(0)" 
+           id="userDropdownBtn"
+           style="cursor: pointer; position: relative; z-index: 1050;">
+            <div class="user-avatar-sm" style="width: 32px; height: 32px; background: #1e293b; border: 1px solid #06b6d4; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #06b6d4;">
+                <i class="fa-solid fa-user-astronaut"></i>
+            </div>
+            <span class="d-none d-lg-inline text-light small s-grotesk">hello</span>
         </a>
-    </li>
-    <li class="nav-item">
-        <span class="role-pill d-inline-block my-1" title="Roles">@string.Join(" · ", User.FindAll(ClaimTypes.Role).Select(c => c.Value))</span>
-    </li>
-    <li class="nav-item">
-        <form class="d-inline" asp-controller="Account" asp-action="Logout" method="post">
-            @Html.AntiForgeryToken()
-            <button type="submit" class="btn btn-link nav-link btn-logout border-0 py-1">Log out</button>
-        </form>
+        
+        <ul class="dropdown-menu dropdown-menu-end p-2 shadow-lg border-0 mt-2" 
+            id="userDropdownMenu"
+            style="background: #0a1020 !important; border: 1px solid rgba(255,255,255,0.15) !important; min-width: 210px; z-index: 2000; position: absolute; right: 0; display: none;">
+            
+            <li class="px-3 py-3 border-bottom border-white border-opacity-10 mb-2">
+                <div class="text-cyan fw-bold small mb-0">Portal Identity</div>
+                <div class="text-muted" style="font-size: 0.75rem;">@User.Identity.Name</div>
+            </li>
+
+            <li>
+                <a class="dropdown-item rounded-2 d-flex align-items-center gap-3 py-2" asp-controller="Dashboard" asp-action="Index">
+                    <i class="fa-solid fa-gauge-high text-cyan"></i> 
+                    <span class="s-grotesk text-white">Command Center</span>
+                </a>
+            </li>
+            
+            <li><hr class="dropdown-divider border-white opacity-10"></li>
+            
+            <li>
+                <form asp-controller="Account" asp-action="Logout" method="post" class="m-0 p-0">
+                    <button type="submit" class="dropdown-item rounded-2 d-flex align-items-center gap-3 py-2 text-danger w-100 border-0 bg-transparent text-start" style="font-weight: bold;">
+                        <i class="fa-solid fa-right-from-bracket"></i> 
+                        <span class="s-grotesk">Logout</span>
+                    </button>
+                </form>
+            </li>
+        </ul>
     </li>
 }
 else
 {
-    <li class="nav-item">
-        <a class="btn btn-nav btn-nav-outline" asp-controller="Account" asp-action="Login">Log in</a>
-    </li>
-    <li class="nav-item">
-        <a class="btn btn-nav btn-nav-primary" asp-controller="Account" asp-action="Register">Register</a>
-    </li>
+    <li class="nav-item"><a class="nav-link" asp-controller="Account" asp-action="Login">Login</a></li>
+    <li class="nav-item"><a class="btn btn-cyan btn-sm px-4 rounded-pill fw-bold" asp-controller="Account" asp-action="Register">Sign Up</a></li>
 }
 </ul>
+
+<script>
+    // Manual Trigger: Har haal mein chalega
+    document.addEventListener('DOMContentLoaded', function () {
+        const btn = document.getElementById('userDropdownBtn');
+        const menu = document.getElementById('userDropdownMenu');
+
+        if (btn && menu) {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const isVisible = menu.style.display === 'block';
+                menu.style.display = isVisible ? 'none' : 'block';
+            });
+
+            // Kahin bhi bahar click karne se band ho jaye
+            document.addEventListener('click', function () {
+                menu.style.display = 'none';
+            });
+        }
+    });
+</script>
+
+<style>
+    .dropdown-item { transition: 0.2s; color: rgba(255,255,255,0.7) !important; }
+    .dropdown-item:hover {
+        background: rgba(6, 182, 212, 0.1) !important;
+        color: #06b6d4 !important;
+        transform: translateX(5px);
+    }
+</style>

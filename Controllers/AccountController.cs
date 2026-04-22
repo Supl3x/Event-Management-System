@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
+
 namespace EventManagementPortal.Controllers;
 
 public class AccountController : Controller

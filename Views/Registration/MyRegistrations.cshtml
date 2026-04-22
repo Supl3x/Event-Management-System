@@ -1,61 +1,136 @@
 @model IEnumerable<EventManagementPortal.Models.MyRegistrationViewModel>
 @{
-    ViewData["Title"] = "My Registrations";
+    ViewData["Title"] = "My Tickets";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="mb-0">My Registrations</h2>
+<div class="container py-5 mt-3">
+    @* ── Header Section ── *@
+    <div class="row align-items-center mb-5">
+        <div class="col-md-7">
+            <h1 class="h-jakarta fw-bold text-white display-5">
+                My <span class="text-gradient">Digital Tickets</span>
+            </h1>
+            <p class="s-grotesk text-muted fs-5">Manage your event registrations and entry passes.</p>
+        </div>
+        <div class="col-md-5 text-md-end">
+            <div class="s-grotesk text-muted small">
+                TOTAL PASSES: <span class="text-cyan fw-bold">@Model.Count()</span>
+            </div>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="saas-card p-5 text-center my-5">
+            <div class="comp-stat-icon mx-auto mb-4" style="width:80px; height:80px; font-size: 2rem;">
+                <i class="fa-solid fa-ticket-simple"></i>
+            </div>
+            <h3 class="h-jakarta text-white">No tickets found.</h3>
+            <p class="text-muted s-grotesk">You haven't registered for any events yet.</p>
+            <a asp-controller="Event" asp-action="Index" class="btn btn-primary rounded-pill px-4 mt-3">Explore Events</a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var item in Model)
+            {
+                <div class="col-lg-6 col-xl-4">
+                    <div class="ticket-preview-card h-100 shadow-lg position-relative overflow-hidden">
+                        @* Status Badge for Ticket Header *@
+                        @{
+                            var statusClass = item.DisplayStatus.ToLower() == "confirmed" ? "badge-open" : "badge-few";
+                        }
+                        <div class="ticket-header d-flex justify-content-between align-items-center px-3">
+                            <span>@item.RegistrationType PASS</span>
+                            <span class="badge @statusClass" style="font-size: 10px;">@item.DisplayStatus.ToUpper()</span>
+                        </div>
+
+                        <div class="p-4">
+                            <div class="row align-items-center">
+                                @* Left Side: Event Info *@
+                                <div class="col-7">
+                                    <h5 class="text-white h-jakarta fw-bold mb-1">@item.CompetitionName</h5>
+                                    <p class="text-cyan s-grotesk extra-small text-uppercase tracking-widest mb-3" style="font-size: 10px;">
+                                        #REG-@item.RegistrationID
+                                    </p>
+
+                                    <div class="mb-2">
+                                        <div class="text-muted small">
+                                            <i class="fa-regular fa-calendar-check text-cyan me-2"></i>
+                                            @item.CompetitionStartDate.ToString("dd MMM yyyy")
+                                        </div>
+                                    </div>
+                                    <div class="mb-4">
+                                        <div class="text-muted small">
+                                            <i class="fa-solid fa-location-dot text-cyan me-2"></i>
+                                            @item.CompetitionLocation
+                                        </div>
+                                    </div>
+                                </div>
+
+                                @* Right Side: QR Pass *@
+                                <div class="col-5 text-center border-start border-white border-opacity-10">
+                                    <div class="bg-white d-inline-block p-2 rounded-3 mb-2">
+                                        @* Using dynamic QR API based on Registration ID *@
+                                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=Registration-@item.RegistrationID" 
+                                             width="70" height="70" alt="Ticket QR" />
+                                    </div>
+                                    <p class="text-white-50 m-0" style="font-size: 9px; font-family: monospace;">SCAN AT ENTRY</p>
+                                </div>
+                            </div>
+
+                            @* Action Buttons *@
+                            <div class="d-flex gap-2 mt-4 pt-3 border-top border-white border-opacity-10">
+                                <a asp-controller="Competition" asp-action="Details" asp-route-id="@item.CompetitionID" 
+                                   class="btn btn-outline-light btn-sm flex-grow-1 rounded-pill s-grotesk py-2">
+                                    Event Details
+                                </a>
+
+                                @if (item.CanUploadPayment)
+                                {
+                                    <a asp-controller="Payment" asp-action="Create" asp-route-registrationId="@item.RegistrationID" 
+                                       class="btn btn-cyan btn-sm flex-grow-1 rounded-pill s-grotesk py-2 fw-bold">
+                                        <i class="fa-solid fa-cloud-arrow-up me-1"></i> Pay Now
+                                    </a>
+                                }
+                            </div>
+                        </div>
+
+                        @* Ticket Perforation (Physical ticket feel) *@
+                        <div class="position-absolute" style="left: -10px; top: 50%; width: 20px; height: 20px; background: var(--canvas-bg); border-radius: 50%;"></div>
+                        <div class="position-absolute" style="right: -10px; top: 50%; width: 20px; height: 20px; background: var(--canvas-bg); border-radius: 50%;"></div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
 </div>
 
-@if (!Model.Any())
-{
-    <div class="alert alert-info">
-        You have no registrations yet.
-    </div>
-}
-else
-{
-    <div class="table-responsive">
-        <table class="table table-striped align-middle">
-            <thead>
-                <tr>
-                    <th>Competition</th>
-                    <th>Date</th>
-                    <th>Location</th>
-                    <th>Type</th>
-                    <th>Status</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model)
-                {
-                    <tr>
-                        <td>@item.CompetitionName</td>
-                        <td>@item.CompetitionStartDate.ToString("dd MMM yyyy")</td>
-                        <td>@item.CompetitionLocation</td>
-                        <td>@item.RegistrationType</td>
-                        <td><span class="badge bg-secondary">@item.DisplayStatus</span></td>
-                        <td>
-                            <a asp-controller="Competition"
-                               asp-action="Details"
-                               asp-route-id="@item.CompetitionID"
-                               class="btn btn-sm btn-outline-primary">
-                                View
-                            </a>
-                            @if (item.CanUploadPayment)
-                            {
-                                <a asp-controller="Payment"
-                                   asp-action="Create"
-                                   asp-route-registrationId="@item.RegistrationID"
-                                   class="btn btn-sm btn-outline-success">
-                                    Upload payment
-                                </a>
-                            }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-}
+<style>
+    .extra-small { font-size: 0.75rem; }
+    .tracking-widest { letter-spacing: 0.15em; }
+    
+    /* Hover effect for ticket */
+    .ticket-preview-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        background: var(--navy-700);
+    }
+    
+    .ticket-preview-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.4), 0 0 15px var(--accent-glow);
+    }
+
+    .btn-cyan {
+        background: var(--cyan-500);
+        color: var(--navy-900);
+        border: none;
+    }
+    
+    .btn-cyan:hover {
+        background: var(--cyan-400);
+        color: var(--navy-900);
+        box-shadow: 0 0 15px var(--cyan-glow);
+    }
+</style>

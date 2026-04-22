@@ -3,78 +3,157 @@
     ViewData["Title"] = "Register";
 }
 
-<div class="auth-panel" style="max-width: 520px;">
-<h2 class="mb-4">Create account</h2>
-<p class="text-muted small mb-3 text-center px-1">
-    Choose <strong>Student</strong> to join competitions. <strong>Organizer</strong> creates events and can verify payments. <strong>Volunteer</strong> can verify payments. <strong>Admin</strong> creates competitions only (payment rules in the DB require organizer/volunteer for verification).
-</p>
+<div class="container-fluid position-relative d-flex align-items-center justify-content-center py-5" style="min-height: 100vh; overflow: hidden; background: var(--canvas-bg);">
+    
+    <div class="hero-glow" style="position: absolute; top: -100px; left: -100px; opacity: 0.6;"></div>
+    <div class="hero-glow-right" style="position: absolute; bottom: -50px; right: -50px; opacity: 0.4;"></div>
 
-<form asp-action="Register" method="post" class="card p-4 border-0">
-    <input type="hidden" asp-for="ReturnUrl" />
-    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+    <div class="row w-100 justify-content-center position-relative" style="z-index: 2;">
+        <div class="col-12 col-md-10 col-lg-6 col-xl-4">
+            
+            <div class="text-center mb-4">
+                <div class="brand-mark m-auto mb-3">
+                    <svg width="22" height="22" viewBox="0 0 20 20" fill="white"><path d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1z"/></svg>
+                </div>
+                <h2 class="hero-heading text-white mb-1">Create Account</h2>
+                <p class="text-muted small">Step into the next-gen campus experience.</p>
+            </div>
 
-    <div class="mb-3">
-        <label asp-for="Name" class="form-label"></label>
-        <input asp-for="Name" class="form-control" />
-        <span asp-validation-for="Name" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="Email" class="form-label"></label>
-        <input asp-for="Email" class="form-control" autocomplete="username" />
-        <span asp-validation-for="Email" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="Phone" class="form-label"></label>
-        <input asp-for="Phone" class="form-control" />
-        <span asp-validation-for="Phone" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="Password" class="form-label"></label>
-        <input asp-for="Password" class="form-control" autocomplete="new-password" />
-        <span asp-validation-for="Password" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="ConfirmPassword" class="form-label"></label>
-        <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" />
-        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="Role" class="form-label"></label>
-        <select asp-for="Role" asp-items="Model.RoleOptions" class="form-select" id="roleSelect"></select>
-        <span asp-validation-for="Role" class="text-danger"></span>
-    </div>
-    <div id="studentFields" class="border rounded p-3 mb-3 bg-light">
-        <div class="mb-3">
-            <label asp-for="RollNumber" class="form-label"></label>
-            <input asp-for="RollNumber" class="form-control" />
-            <span asp-validation-for="RollNumber" class="text-danger"></span>
+            <div class="saas-card p-3 mb-3 border-info border-opacity-10" style="background: rgba(6, 182, 212, 0.03);">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="live-dot"></div>
+                    <span class="text-cyan" style="font-size: 0.72rem; font-weight: 400; text-transform: uppercase; letter-spacing: 0.05em;">
+                        Pro Tip: Students get exclusive event access.
+                    </span>
+                </div>
+            </div>
+
+            <div class="saas-card p-4 p-md-5">
+                <form asp-action="Register" method="post" id="regForm">
+                    <input type="hidden" asp-for="ReturnUrl" />
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger border-0 bg-danger bg-opacity-10 text-danger small mb-4"></div>
+
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label asp-for="Name" class="form-label text-white-50 small mb-1">Full Name</label>
+                            <input asp-for="Name" class="form-control custom-input" placeholder="Abdullah Khan" />
+                            <span asp-validation-for="Name" class="text-danger x-small"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Email" class="form-label text-white-50 small mb-1">University Email</label>
+                            <input asp-for="Email" class="form-control custom-input" placeholder="name@nust.edu.pk" />
+                            <span asp-validation-for="Email" class="text-danger x-small"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Phone" class="form-label text-white-50 small mb-1">Phone Number</label>
+                            <input asp-for="Phone" class="form-control custom-input" placeholder="03XXXXXXXXX" />
+                            <span asp-validation-for="Phone" class="text-danger x-small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="Password" class="form-label text-white-50 small mb-1">Password</label>
+                            <input asp-for="Password" type="password" class="form-control custom-input" placeholder="••••••••" />
+                            <span asp-validation-for="Password" class="text-danger x-small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="ConfirmPassword" class="form-label text-white-50 small mb-1">Confirm</label>
+                            <input asp-for="ConfirmPassword" type="password" class="form-control custom-input" placeholder="••••••••" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger x-small"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Role" class="form-label text-white-50 small mb-1">I am a...</label>
+                            <select asp-for="Role" asp-items="Model.RoleOptions" class="form-select custom-input" id="roleSelect"></select>
+                            <span asp-validation-for="Role" class="text-danger x-small"></span>
+                        </div>
+
+                        <div id="studentFields" class="col-12" style="display:none;">
+                            <div class="p-3 rounded-3 border border-secondary border-opacity-10 shadow-inner" style="background: rgba(255,255,255,0.02);">
+                                <div class="mb-3">
+                                    <label asp-for="RollNumber" class="form-label text-white-50 small mb-1">Roll Number</label>
+                                    <input asp-for="RollNumber" class="form-control custom-input" placeholder="e.g. 345678" />
+                                </div>
+                                <div class="mb-0">
+                                    <label asp-for="Department" class="form-label text-white-50 small mb-1">Department</label>
+                                    <input asp-for="Department" class="form-control custom-input" placeholder="e.g. SEECS / NBS" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 mt-4 shadow-sm">
+                        Create Account <span class="ms-1">→</span>
+                    </button>
+
+                    <p class="text-center text-muted small mt-4 mb-0">
+                        Already have an account? 
+                        <a asp-action="Login" class="text-cyan text-decoration-none hover-glow">Sign In</a>
+                    </p>
+                </form>
+            </div>
         </div>
-        <div class="mb-0">
-            <label asp-for="Department" class="form-label"></label>
-            <input asp-for="Department" class="form-control" />
-            <span asp-validation-for="Department" class="text-danger"></span>
-        </div>
     </div>
-
-    <button type="submit" class="btn btn-primary w-100 py-2">Create account</button>
-    <p class="text-center text-muted small mt-3 mb-0">
-        Already registered? <a asp-action="Login">Log in</a>
-    </p>
-</form>
 </div>
+
+<style>
+    .custom-input {
+        background-color: var(--navy-900) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: white !important;
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 300;
+        font-size: 0.9rem;
+        padding: 0.6rem 0.85rem;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+    .custom-input:focus {
+        border-color: var(--cyan-500) !important;
+        box-shadow: 0 0 12px var(--cyan-glow) !important;
+        transform: translateY(-1px);
+    }
+
+    .x-small { font-size: 0.7rem; }
+    
+    .hover-glow:hover {
+        text-shadow: 0 0 8px var(--cyan-500);
+        color: var(--cyan-400) !important;
+    }
+
+    /* Animation for the student box */
+    #studentFields {
+        animation: slideDown 0.3s ease-out;
+    }
+
+    @@keyframes slideDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        (function () {
+        document.addEventListener('DOMContentLoaded', function () {
             const roleSelect = document.getElementById('roleSelect');
             const studentFields = document.getElementById('studentFields');
+            
             function toggle() {
-                const isStudent = roleSelect.value === '@AppRoles.Student';
-                studentFields.style.display = isStudent ? 'block' : 'none';
+                // Ham check kar rahe hain ke value mein "Student" (case insensitive) hai ya nahi
+                const val = roleSelect.value.toLowerCase();
+                if (val.includes('student')) {
+                    studentFields.style.display = 'block';
+                } else {
+                    studentFields.style.display = 'none';
+                }
             }
+
             roleSelect.addEventListener('change', toggle);
-            toggle();
-        })();
+            toggle(); // Run on load
+        });
     </script>
 }

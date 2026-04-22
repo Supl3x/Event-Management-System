@@ -311,6 +311,8 @@ public class RegistrationController : Controller
         return View(model);
     }
 
+    
+
     private static string ResolveDisplayStatus(Registration r)
     {
         if (r.Ticket != null)

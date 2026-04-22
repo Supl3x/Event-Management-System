@@ -1,35 +1,222 @@
 @model EventManagementPortal.Models.Event
 @{
-    ViewData["Title"] = "Event Details";
+    ViewData["Title"] = Model?.Name + " - Details";
+    var organizerName = Model?.Creator?.User?.Name ?? "Campus Admin";
+    var organizerEmail = Model?.Creator?.User?.Email ?? "support@nust.edu.pk";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="mb-0">@Model.Name</h2>
-    <a asp-action="Index" class="btn btn-outline-secondary">Back to events</a>
-</div>
+<style>
+    /* Premium Detail Styling */
+    .detail-header-glow {
+        position: absolute;
+        top: -150px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 600px;
+        height: 400px;
+        background: radial-gradient(circle, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
+        pointer-events: none;
+        z-index: 0;
+    }
 
-<div class="card shadow-sm mb-4">
-    <div class="card-body">
-        <div class="row g-3">
-            <div class="col-md-6">
-                <p class="mb-1"><strong>Department</strong></p>
-                <p class="text-muted">@Model.Department</p>
+    .glass-ticket {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 30px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .ticket-stub-border {
+        border-right: 2px dashed rgba(255, 255, 255, 0.1);
+        position: relative;
+    }
+
+    /* Ticket Notch Effect */
+    .ticket-stub-border::before, .ticket-stub-border::after {
+        content: '';
+        position: absolute;
+        right: -11px;
+        width: 20px;
+        height: 20px;
+        background: #0f172a; /* Matches Layout Background */
+        border-radius: 50%;
+        z-index: 2;
+    }
+    .ticket-stub-border::before { top: -10px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+    .ticket-stub-border::after { bottom: -10px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+
+    .meta-card {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 20px;
+        padding: 20px;
+        transition: 0.3s;
+    }
+    .meta-card:hover {
+        background: rgba(255, 255, 255, 0.04);
+        border-color: var(--cyan-500);
+    }
+
+    .floating-reg-panel {
+        background: rgba(10, 16, 32, 0.8);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(6, 182, 212, 0.2);
+        border-radius: 28px;
+    }
+</style>
+
+<div class="position-relative">
+    <div class="detail-header-glow"></div>
+
+    <div class="container py-5 position-relative" style="z-index: 1;">
+        @* ── Breadcrumb & Back ── *@
+        <div class="d-flex justify-content-between align-items-center mb-5">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-2 s-grotesk">
+                        <li class="breadcrumb-item"><a asp-controller="Event" asp-action="Index" class="text-cyan text-decoration-none opacity-75">Events Portal</a></li>
+                        <li class="breadcrumb-item active text-white opacity-50" aria-current="page">Signal Details</li>
+                    </ol>
+                </nav>
+                <h1 class="display-4 text-white h-jakarta fw-bold">@Model?.Name</h1>
+                <span class="badge-live px-3 py-1 rounded-pill small">ID: #SYS-@Model?.EventID</span>
             </div>
-            <div class="col-md-6">
-                <p class="mb-1"><strong>Location</strong></p>
-                <p class="text-muted">@Model.Location</p>
+            <a asp-action="Index" class="btn btn-outline-light px-4 rounded-pill s-grotesk">
+                <i class="fa-solid fa-arrow-left-long me-2"></i> Return to Grid
+            </a>
+        </div>
+
+        <div class="row g-5">
+            @* ── Left Side: Information ── *@
+            <div class="col-lg-8">
+                @* Info Grid *@
+                <div class="row g-4 mb-5">
+                    <div class="col-md-6">
+                        <div class="meta-card">
+                            <div class="comp-stat-icon mb-3"><i class="fa-solid fa-building-user"></i></div>
+                            <p class="text-muted small text-uppercase tracking-widest mb-1">Department</p>
+                            <h5 class="text-white h-jakarta mb-0">@Model?.Department</h5>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="meta-card">
+                            <div class="comp-stat-icon mb-3" style="color: var(--cyan-500); border-color: var(--cyan-glow);"><i class="fa-solid fa-location-crosshairs"></i></div>
+                            <p class="text-muted small text-uppercase tracking-widest mb-1">Deployment Venue</p>
+                            <h5 class="text-white h-jakarta mb-0">@Model?.Location</h5>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="meta-card">
+                            <div class="comp-stat-icon mb-3" style="color: var(--blue-400); border-color: var(--accent-glow);"><i class="fa-solid fa-calendar-check"></i></div>
+                            <p class="text-muted small text-uppercase tracking-widest mb-1">Activation Date</p>
+                            <h5 class="text-white h-jakarta mb-0">@Model?.StartDate.ToString("dd MMM yyyy")</h5>
+                            <span class="text-muted small">@Model?.StartDate.ToString("hh:mm tt")</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="meta-card">
+                            <div class="comp-stat-icon mb-3"><i class="fa-solid fa-user-astronaut"></i></div>
+                            <p class="text-muted small text-uppercase tracking-widest mb-1">Organizer Lead</p>
+                            <h5 class="text-white h-jakarta mb-0">@organizerName</h5>
+                            <span class="text-muted small">@organizerEmail</span>
+                        </div>
+                    </div>
+                </div>
+
+                @* Premium Ticket Preview *@
+                <div class="glass-ticket shadow-lg">
+                    <div class="ticket-header" style="background: linear-gradient(90deg, var(--blue-600), var(--cyan-500)); letter-spacing: 2px;">
+                        Official Digital Signal Pass
+                    </div>
+                    <div class="row g-0">
+                        <div class="col-md-8 p-5 ticket-stub-border">
+                            <div class="hero-glow" style="width: 150px; height: 150px; top: -50px; left: -50px;"></div>
+                            <div class="d-flex justify-content-between align-items-start mb-5">
+                                <div>
+                                    <h2 class="text-white h-jakarta fw-bold mb-2">@Model?.Name</h2>
+                                    <p class="text-cyan s-grotesk tracking-widest text-uppercase small mb-0">Event Authorization Node</p>
+                                </div>
+                                <div class="text-end">
+                                    <p class="text-muted small mb-0">SECURITY LEVEL</p>
+                                    <p class="text-white fw-bold mb-0">Tier-1 Access</p>
+                                </div>
+                            </div>
+                            
+                            <div class="row pt-4 border-top border-white border-opacity-10">
+                                <div class="col-6">
+                                    <p class="text-muted small mb-0">MISSION START</p>
+                                    <p class="text-white h-jakarta">@Model?.StartDate.ToString("MMM dd, yyyy")</p>
+                                </div>
+                                <div class="col-6 text-end">
+                                    <p class="text-muted small mb-0">LOCATION NODE</p>
+                                    <p class="text-white h-jakarta">@Model?.Location</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 p-5 d-flex flex-column align-items-center justify-content-center bg-black bg-opacity-20">
+                            <div class="bg-white p-3 rounded-4 mb-3 shadow-glow" style="border: 4px solid var(--cyan-500);">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=EVENT-@Model?.EventID" width="110" alt="QR Code">
+                            </div>
+                            <code class="text-cyan fw-bold">SIGNAL: #E-@Model?.EventID</code>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="col-md-6">
-                <p class="mb-1"><strong>Start date</strong></p>
-                <p class="text-muted">@Model.StartDate.ToString("dd MMM yyyy")</p>
-            </div>
-            <div class="col-md-6">
-                <p class="mb-1"><strong>End date</strong></p>
-                <p class="text-muted">@Model.EndDate.ToString("dd MMM yyyy")</p>
-            </div>
-            <div class="col-md-6">
-                <p class="mb-1"><strong>Created by</strong></p>
-                <p class="text-muted">@Model.Creator.User.Name (@Model.Creator.User.Email)</p>
+
+            @* ── Right Side: Registration Panel ── *@
+            <div class="col-lg-4">
+                <div class="floating-reg-panel p-4 sticky-top shadow-lg" style="top: 110px;">
+                    <h5 class="text-white h-jakarta mb-4 d-flex align-items-center">
+                        <i class="fa-solid fa-satellite-dish text-cyan me-3"></i> Registration Hub
+                    </h5>
+                    
+                    <div class="d-flex justify-content-between mb-3 border-bottom border-white border-opacity-5 pb-3">
+                        <span class="text-muted s-grotesk">Channel Status</span>
+                        <span class="badge-open">OPEN</span>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mb-4">
+                        <span class="text-muted s-grotesk">Access Fee</span>
+                        <span class="text-white fw-bold">FREE</span>
+                    </div>
+
+                    <div class="mb-2 d-flex justify-content-between small">
+                        <span class="text-muted">Node Capacity</span>
+                        <span class="text-cyan">85% Full</span>
+                    </div>
+                    <div class="seat-bar-wrap mb-4" style="height: 6px;">
+                        <div class="seat-bar" style="width: 85%; box-shadow: 0 0 10px var(--blue-600);"></div>
+                    </div>
+
+                    <div class="d-grid gap-3 mt-4">
+                        @if (User.Identity?.IsAuthenticated ?? false)
+                        {
+                            @if (User.IsInRole("Student"))
+                            {
+                                <a asp-controller="Registration" asp-action="Create" asp-route-eventId="@Model?.EventID" class="btn btn-cyan btn-lg rounded-pill fw-bold">
+                                    INITIALISE ENTRY <i class="fa-solid fa-bolt-lightning ms-2"></i>
+                                </a>
+                            }
+                        }
+                        else
+                        {
+                            <a asp-controller="Account" asp-action="Login" class="btn btn-primary btn-lg rounded-pill fw-bold">
+                                LOGIN TO REGISTER
+                            </a>
+                        }
+                        <button class="btn btn-outline-light rounded-pill py-2">
+                            <i class="fa-solid fa-share-nodes me-2"></i> SHARE NODE
+                        </button>
+                    </div>
+
+                    <div class="mt-4 p-3 rounded-4 bg-white bg-opacity-5 border border-white border-opacity-10">
+                        <p class="small text-muted mb-0 s-grotesk">
+                            <i class="fa-solid fa-shield-halved text-cyan me-2"></i>
+                            Verification required at venue entry via digital pass.
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

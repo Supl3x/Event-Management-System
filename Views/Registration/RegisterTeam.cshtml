@@ -1,58 +1,159 @@
 @model EventManagementPortal.Models.TeamRegistrationViewModel
 @{
-    ViewData["Title"] = "Team registration";
+    ViewData["Title"] = "Team Formation - " + Model.CompetitionName;
     var count = Model.Members.Count;
 }
 
-<h2 class="mb-2">Register as a team</h2>
-<p class="text-muted mb-4">
-    <strong>@Model.CompetitionName</strong> requires exactly <strong>@count</strong> team member(s) (including you as leader).
-</p>
+<div class="container py-5 mt-4">
+    @* ── Background Aesthetics (Theme 2) ── *@
+    <div class="hero-glow" style="position: absolute; top: -120px; left: -100px; opacity: 0.5; pointer-events: none;"></div>
+    <div class="hero-glow-right" style="position: absolute; bottom: -80px; right: -80px; opacity: 0.3; pointer-events: none;"></div>
 
-<form asp-action="RegisterTeam" method="post" class="card shadow-sm p-4">
-    <div asp-validation-summary="All" class="text-danger mb-3"></div>
-    <input type="hidden" asp-for="CompetitionID" />
-    <input type="hidden" asp-for="CompetitionName" />
+    <div class="row g-5 position-relative" style="z-index: 2;">
+        @* ── Left Side: Main Registration Node ── *@
+        <div class="col-lg-8">
+            <div class="saas-card p-4 p-md-5 mb-5 shadow-lg border-0" style="background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(20px);">
+                <div class="mb-5">
+                    <div class="hero-badge mb-3">
+                        <span class="live-dot"></span>
+                        Strategic Deployment Active
+                    </div>
+                    <h2 class="h-jakarta text-white fw-bold display-6 mb-2">Team <span class="text-gradient">Formation</span></h2>
+                    <p class="text-muted s-grotesk fs-5">Assemble your roster for <strong>@Model.CompetitionName</strong>. All fields are mission-critical.</p>
+                </div>
 
-    <div class="mb-4">
-        <label asp-for="TeamName" class="form-label"></label>
-        <input asp-for="TeamName" class="form-control" />
-        <span asp-validation-for="TeamName" class="text-danger"></span>
-    </div>
+                <form asp-action="RegisterTeam" method="post" id="registrationForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="CompetitionID" />
+                    <input type="hidden" asp-for="CompetitionName" />
+                    
+                    <div asp-validation-summary="All" class="alert alert-danger bg-danger bg-opacity-10 border-0 text-danger small mb-4 s-grotesk"></div>
 
-    <h5 class="mb-3">Team members</h5>
-    @for (var i = 0; i < Model.Members.Count; i++)
-    {
-        <div class="border rounded p-3 mb-3">
-            <p class="small text-muted mb-2">Member @(i + 1) @(i == 0 ? "(you — team leader)" : "")</p>
-            <div class="row g-2">
-                <div class="col-md-6 mb-2">
-                    <label asp-for="Members[i].Name" class="form-label"></label>
-                    <input asp-for="Members[i].Name" class="form-control" />
-                    <span asp-validation-for="Members[i].Name" class="text-danger"></span>
+                    @* Section 1: Team Identity *@
+                    <div class="mb-5 pb-4 border-bottom border-white border-opacity-5">
+                        <label asp-for="TeamName" class="form-label text-white-50 small mb-2 text-uppercase tracking-widest fw-bold">Tactical Team Name</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-navy border-secondary border-opacity-25 text-cyan" style="border-radius: 12px 0 0 12px;"><i class="fa-solid fa-id-card-clip"></i></span>
+                            <input asp-for="TeamName" class="form-control bg-navy border-secondary border-opacity-25 text-white p-3 s-grotesk" 
+                                   placeholder="e.g. NUST Alpha Centauri" style="border-radius: 0 12px 12px 0; font-weight: 300;" />
+                        </div>
+                        <span asp-validation-for="TeamName" class="text-danger extra-small mt-2 d-block"></span>
+                    </div>
+
+                    @* Section 2: Member Roster *@
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="comp-stat-icon me-3" style="width: 40px; height: 40px; border-radius: 10px;">
+                            <i class="fa-solid fa-users-viewfinder"></i>
+                        </div>
+                        <h4 class="text-white h-jakarta mb-0">Member Roster (@count Slots)</h4>
+                    </div>
+
+                    <div class="row g-4">
+                        @for (int i = 0; i < Model.Members.Count; i++)
+                        {
+                            var isLeader = (i == 0);
+                            <div class="col-md-12">
+                                <div class="member-node p-4 rounded-4 @(isLeader ? "border-cyan" : "")" 
+                                     style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255,255,255,0.08); transition: 0.3s;">
+                                    
+                                    <div class="d-flex justify-content-between align-items-center mb-4">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="rounded-circle bg-navy d-flex align-items-center justify-content-center border border-secondary border-opacity-25" 
+                                                 style="width: 38px; height: 38px; color: @(isLeader ? "var(--cyan-500)" : "var(--bs-body-color)");">
+                                                <i class="fa-solid @(isLeader ? "fa-crown" : "fa-user-astronaut")"></i>
+                                            </div>
+                                            <div>
+                                                <h6 class="text-white mb-0 h-jakarta">@(isLeader ? "Team Leader" : $"Crew Member {i + 1}")</h6>
+                                                <small class="text-muted s-grotesk">@(isLeader ? "Authentication Node" : "Standard Operator")</small>
+                                            </div>
+                                        </div>
+                                        @if (isLeader) { <span class="badge-live px-3 py-1 rounded-pill" style="font-size: 10px;">PRIMARY</span> }
+                                    </div>
+
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label asp-for="Members[i].Name" class="text-white-50 small mb-1">Official Name</label>
+                                            <input asp-for="Members[i].Name" class="form-control bg-navy border-secondary border-opacity-10 text-white p-2 text-300" placeholder="Full Name" />
+                                            <span asp-validation-for="Members[i].Name" class="text-danger extra-small"></span>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label asp-for="Members[i].Email" class="text-white-50 small mb-1">University Email</label>
+                                            <input asp-for="Members[i].Email" class="form-control bg-navy border-secondary border-opacity-10 text-white p-2 text-300" placeholder="name@nust.edu.pk" />
+                                            <span asp-validation-for="Members[i].Email" class="text-danger extra-small"></span>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label asp-for="Members[i].RollNumber" class="text-white-50 small mb-1">CMS Roll Number</label>
+                                            <input asp-for="Members[i].RollNumber" class="form-control bg-navy border-secondary border-opacity-10 text-white p-2 text-300" placeholder="e.g. 345678" />
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label asp-for="Members[i].Department" class="text-white-50 small mb-1">Department</label>
+                                            <input asp-for="Members[i].Department" class="form-control bg-navy border-secondary border-opacity-10 text-white p-2 text-300" placeholder="e.g. SEECS / SADA" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    @* Action Suite *@
+                    <div class="mt-5 pt-4 d-flex flex-column flex-md-row gap-3">
+                        <button type="submit" class="btn btn-primary btn-lg rounded-pill px-5 py-3 fw-bold flex-grow-1 shadow-glow-blue transition-all">
+                            INITIALISE DEPLOYMENT <i class="fa-solid fa-satellite-dish ms-2"></i>
+                        </button>
+                        <a asp-controller="Competition" asp-action="Details" asp-route-id="@Model.CompetitionID" 
+                           class="btn btn-outline-light btn-lg rounded-pill px-4 py-3 s-grotesk opacity-75">
+                            ABORT MISSION
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        @* ── Right Side: Tactical Intel Panel ── *@
+        <div class="col-lg-4">
+            <div class="saas-card p-4 sticky-top shadow-lg border-0" style="top: 110px; background: rgba(10, 16, 32, 0.8); backdrop-filter: blur(15px);">
+                <h5 class="h-jakarta text-white mb-4 d-flex align-items-center">
+                    <i class="fa-solid fa-microchip text-cyan me-3"></i> Mission Data
+                </h5>
+                
+                <div class="intel-box mb-4">
+                    <label class="text-muted extra-small text-uppercase tracking-widest d-block mb-1">Target Operation</label>
+                    <p class="text-white fw-bold mb-0">@Model.CompetitionName</p>
                 </div>
-                <div class="col-md-6 mb-2">
-                    <label asp-for="Members[i].Email" class="form-label"></label>
-                    <input asp-for="Members[i].Email" class="form-control" />
-                    <span asp-validation-for="Members[i].Email" class="text-danger"></span>
+
+                <div class="intel-box mb-4">
+                    <label class="text-muted extra-small text-uppercase tracking-widest d-block mb-1">Unit Capacity</label>
+                    <p class="text-cyan fw-bold mb-0">@count Member Unit</p>
                 </div>
-                <div class="col-md-6 mb-2">
-                    <label asp-for="Members[i].RollNumber" class="form-label"></label>
-                    <input asp-for="Members[i].RollNumber" class="form-control" />
-                    <span asp-validation-for="Members[i].RollNumber" class="text-danger"></span>
+
+                <div class="p-3 rounded-4 bg-white bg-opacity-5 border border-white border-opacity-10 mb-4">
+                    <div class="d-flex gap-2 mb-2">
+                        <i class="fa-solid fa-shield-halved text-cyan small"></i>
+                        <span class="extra-small text-white opacity-75 s-grotesk">Data Protection Active</span>
+                    </div>
+                    <p class="extra-small text-muted mb-0 s-grotesk">
+                        All members must provide valid NUST credentials. Digital passes will be transmitted individually upon confirmation.
+                    </p>
                 </div>
-                <div class="col-md-6 mb-2">
-                    <label asp-for="Members[i].Department" class="form-label"></label>
-                    <input asp-for="Members[i].Department" class="form-control" />
-                    <span asp-validation-for="Members[i].Department" class="text-danger"></span>
+
+                <div class="text-center py-3 border-top border-white border-opacity-5 mt-auto">
+                    <code class="text-cyan opacity-40 small tracking-widest">PROTOCOL: REG_HUB_2026</code>
                 </div>
             </div>
         </div>
-    }
+    </div>
+</div>
 
-    <button type="submit" class="btn btn-primary">Submit team registration</button>
-    <a asp-controller="Competition" asp-action="Details" asp-route-id="@Model.CompetitionID" class="btn btn-outline-secondary ms-2">Cancel</a>
-</form>
+<style>
+    .member-node:hover { border-color: var(--cyan-500) !important; background: rgba(255,255,255,0.05) !important; transform: scale(1.01); }
+    .border-cyan { border-color: var(--cyan-500) !important; box-shadow: 0 0 15px var(--cyan-glow); }
+    .shadow-glow-blue:hover { box-shadow: 0 0 25px rgba(2, 132, 199, 0.4); transform: translateY(-2px); }
+    .extra-small { font-size: 0.72rem; }
+    .text-300 { font-weight: 300; }
+    .transition-all { transition: all 0.3s ease; }
+    .tracking-widest { letter-spacing: 0.15em; }
+    .intel-box { border-left: 3px solid var(--blue-600); padding-left: 15px; }
+</style>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

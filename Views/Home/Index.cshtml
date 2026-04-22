@@ -1,58 +1,128 @@
-﻿@model IEnumerable<EventManagementPortal.Models.Competition>
+﻿@model IEnumerable<EventManagementPortal.Models.Event>
+@using System.Security.Claims
 @{
-    ViewData["Title"] = "Home";
+    ViewData["Title"] = "Home Page";
 }
 
-<div class="hero-strip">
-    <h1>Discover competitions</h1>
-    <p>Browse events, register as a student, and track payments — all in one place.</p>
-</div>
+<style>
+    /* Z-Index Fix: Taake Hero section navbar ko block na kare */
+    .hero-section {
+        position: relative;
+        z-index: 1; /* Navbar (z-index 1030) se niche rakha hai */
+        overflow: hidden;
+    }
 
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
-    <h2 class="mb-0">Upcoming competitions</h2>
-    <a asp-controller="Competition" asp-action="Index" class="btn btn-outline-primary btn-sm">View all</a>
-</div>
+    /* Glow elements ko interactable hone se rokne ke liye */
+    .hero-glow, .hero-glow-right {
+        pointer-events: none;
+        z-index: -1;
+    }
 
-@if (!Model.Any())
-{
-    <div class="card">
-        <div class="card-body empty-state">
-            <p class="mb-2 fw-semibold text-body">No competitions yet</p>
-            <p class="small mb-0">Check back later or explore <a asp-controller="Event" asp-action="Index">events</a>.</p>
-        </div>
-    </div>
-}
-else
-{
-    <div class="row g-4">
-        @foreach (var competition in Model)
-        {
-            <div class="col-md-6 col-lg-4" data-competition-id="@competition.CompetitionID">
-                <div class="card h-100">
-                    <div class="card-body d-flex flex-column">
-                        <h5 class="card-title">@competition.Name</h5>
-                        <p class="card-text small text-muted mb-2">@competition.Event.Name</p>
-                        <p class="card-text mb-2 small">
-                            <span class="text-secondary">Date</span><br />
-                            @competition.StartDate.ToString("dd MMM yyyy")
-                        </p>
-                        <p class="card-text small text-muted mb-2">
-                            <span class="text-secondary">Location</span><br />
-                            @competition.Location
-                        </p>
-                        <p class="card-text mb-4 small">
-                            <span class="text-secondary">Entry fee</span><br />
-                            <span class="fw-semibold text-body">@competition.EntryFee.ToString("0.00")</span>
-                        </p>
-                        <a asp-controller="Competition"
-                           asp-action="Details"
-                           asp-route-id="@competition.CompetitionID"
-                           class="btn btn-primary mt-auto">
-                            View details
+    /* Text gradient and smooth transitions */
+    .text-gradient {
+        background: linear-gradient(135deg, #0284c7 0%, #06b6d4 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+</style>
+
+<div class="hero-section py-5">
+    <div class="hero-glow" style="position: absolute; top: -100px; left: -100px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(2,132,199,0.15) 0%, transparent 70%); border-radius: 50%;"></div>
+    <div class="hero-glow-right" style="position: absolute; bottom: -50px; right: -50px; width: 300px; height: 300px; background: radial-gradient(circle, rgba(6,182,212,0.1) 0%, transparent 70%); border-radius: 50%;"></div>
+
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 text-center text-lg-start mb-5 mb-lg-0" style="position:relative;z-index:2;">
+                <div class="hero-badge mb-4">
+                    <span class="live-dot"></span>
+                    2026 Ticketing Portal is active &rarr;
+                </div>
+
+                <h1 class="display-3 fw-normal mb-4 text-white lh-sm h-jakarta">
+                    Elevate your <br />
+                    <span class="text-gradient">Campus Life</span><br />
+                    Experience
+                </h1>
+
+                <p class="lead mb-5 pe-lg-4 s-grotesk text-muted" style="font-weight:300; line-height:1.75;">
+                    The modern, all-in-one platform to discover university events,
+                    register for hackathons, and secure digital tickets instantly.
+                </p>
+
+                <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center justify-content-lg-start">
+                    <a asp-controller="Event" asp-action="Index" class="btn btn-primary btn-lg px-5 py-3 rounded-pill fw-bold">
+                        Browse Events <i class="fa-solid fa-bolt ms-2"></i>
+                    </a>
+
+                    @if (!(User.Identity?.IsAuthenticated ?? false))
+                    {
+                        <a asp-controller="Account" asp-action="Register" class="btn btn-outline-light btn-lg px-5 py-3 rounded-pill">
+                            Create Account
                         </a>
+                    }
+                    else
+                    {
+                        <a asp-controller="Dashboard" asp-action="Index" class="btn btn-outline-light btn-lg px-5 py-3 rounded-pill">
+                            My Dashboard
+                        </a>
+                    }
+                </div>
+            </div>
+
+            <div class="col-lg-6 ps-lg-5">
+                <div class="row g-4">
+                    <div class="col-6 pt-lg-5">
+                        <div class="saas-card p-4 mb-4 mt-lg-5">
+                            <i class="fa-solid fa-qrcode text-cyan mb-3 fs-4"></i>
+                            <h6 class="text-white">QR Access</h6>
+                            <p class="mb-0 text-muted small">Instant entry via mobile.</p>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="saas-card p-4 mb-4">
+                            <i class="fa-solid fa-clock-rotate-left text-blue mb-3 fs-4"></i>
+                            <h6 class="text-white">Live Updates</h6>
+                            <p class="mb-0 text-muted small">Real-time seat counts.</p>
+                        </div>
+                        <div class="ticket-preview-card shadow-lg">
+                            <div class="ticket-header">Preview Ticket</div>
+                            <div class="p-4 text-center">
+                                <div class="bg-white d-inline-block p-2 rounded mb-3">
+                                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=EventHub" width="60" alt="QR" />
+                                </div>
+                                <p class="text-white mb-0 small">Tech Conf 2026</p>
+                                <code class="text-cyan">#STUDENT-99</code>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+@* Events Grid *@
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <h2 class="text-white h-jakarta mb-0">Upcoming Events</h2>
+        <a asp-controller="Event" asp-action="Index" class="text-cyan text-decoration-none small">View all &rarr;</a>
+    </div>
+
+    <div class="row g-4">
+        @if (Model != null && Model.Any())
+        {
+            @foreach (var item in Model.Take(3))
+            {
+                <div class="col-md-4">
+                    <div class="saas-card p-4 h-100">
+                        <h5 class="text-white mb-3">@item.Name</h5>
+                        <div class="text-muted small mb-3">
+                            <i class="fa-solid fa-location-dot text-cyan me-2"></i> @item.Location
+                        </div>
+                        <a asp-controller="Event" asp-action="Details" asp-route-id="@item.EventID" class="btn btn-sm btn-outline-primary w-100 rounded-pill mt-auto">View Details</a>
+                    </div>
+                </div>
+            }
         }
     </div>
-}
+</div>

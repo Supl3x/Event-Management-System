@@ -3,27 +3,67 @@
     ViewData["Title"] = "Login";
 }
 
-<div class="auth-panel">
-<h2 class="mb-4">Log in</h2>
+<div class="container-fluid position-relative d-flex align-items-center justify-content-center" style="min-height: 85vh; overflow: hidden;">
+    
+    <div class="hero-glow" style="position: absolute; top: -100px; left: -100px; opacity: 0.6;"></div>
+    <div class="hero-glow-right" style="position: absolute; bottom: -50px; right: -50px; opacity: 0.4;"></div>
 
-<form asp-action="Login" method="post" class="card p-4 border-0">
-    <input type="hidden" asp-for="ReturnUrl" />
-    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-    <div class="mb-3">
-        <label asp-for="Email" class="form-label"></label>
-        <input asp-for="Email" class="form-control" autocomplete="username" />
-        <span asp-validation-for="Email" class="text-danger"></span>
+    <div class="row w-100 justify-content-center position-relative" style="z-index: 2;">
+        <div class="col-12 col-md-6 col-lg-4">
+            
+            <div class="text-center mb-4">
+                <div class="brand-mark m-auto mb-3" style="width: 48px; height: 48px; border-radius: 12px; background: var(--blue-600); display: flex; align-items: center; justify-content: center;">
+                    <svg width="24" height="24" viewBox="0 0 20 20" fill="white"><path d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1z"/></svg>
+                </div>
+                <h2 class="hero-heading text-white mb-1">Welcome Back</h2>
+                <p class="text-muted small">Enter your credentials to access your portal</p>
+            </div>
+
+            <div class="saas-card p-4 p-md-5">
+                <form asp-action="Login" method="post">
+                    <input type="hidden" asp-for="ReturnUrl" />
+                    
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger border-0 bg-danger bg-opacity-10 text-danger small mb-4"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label text-white-50 small mb-2">Email Address</label>
+                        <div class="position-relative">
+                            <input asp-for="Email" class="form-control bg-navy border-secondary border-opacity-25 text-white" 
+                                   placeholder="name@nust.edu.pk" autocomplete="username" 
+                                   style="border-radius: 10px; padding: 12px; font-weight: 300;" />
+                        </div>
+                        <span asp-validation-for="Email" class="text-danger x-small mt-1 d-block"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between">
+                            <label asp-for="Password" class="form-label text-white-50 small mb-2">Password</label>
+                            <a href="#" class="text-cyan small text-decoration-none" style="font-size: 0.75rem;">Forgot?</a>
+                        </div>
+                        <input asp-for="Password" class="form-control bg-navy border-secondary border-opacity-25 text-white" 
+                               type="password" placeholder="••••••••" autocomplete="current-password" 
+                               style="border-radius: 10px; padding: 12px; font-weight: 300;" />
+                        <span asp-validation-for="Password" class="text-danger x-small mt-1 d-block"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-normal mb-3" style="font-size: 1rem;">
+                        Sign In →
+                    </button>
+
+                    <div class="text-center">
+                        <p class="text-muted small mb-0">
+                            Don't have an account? 
+                            <a asp-action="Register" class="text-cyan text-decoration-none fw-normal">Create Account</a>
+                        </p>
+                    </div>
+                </form>
+            </div>
+
+            <p class="text-center text-secondary mt-4" style="font-size: 0.75rem; opacity: 0.5;">
+                Secure Access — EventHub NUST &copy; 2026
+            </p>
+        </div>
     </div>
-    <div class="mb-3">
-        <label asp-for="Password" class="form-label"></label>
-        <input asp-for="Password" class="form-control" autocomplete="current-password" />
-        <span asp-validation-for="Password" class="text-danger"></span>
-    </div>
-    <button type="submit" class="btn btn-primary w-100 py-2">Log in</button>
-    <p class="text-center text-muted small mt-3 mb-0">
-        No account? <a asp-action="Register">Register</a>
-    </p>
-</form>
 </div>
 
 @section Scripts {

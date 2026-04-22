@@ -1,45 +1,252 @@
 @model IEnumerable<EventManagementPortal.Models.Event>
 @{
-    ViewData["Title"] = "Events";
+    ViewData["Title"] = "Events Portal";
 }
 
-@if (TempData["SuccessMessage"] is string success)
-{
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        @success
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+<style>
+    :root {
+        --accent-cyan: #06b6d4;
+        --accent-blue: #0284c7;
+        --glass-bg: rgba(255, 255, 255, 0.03);
+        --glass-border: rgba(255, 255, 255, 0.08);
+    }
+
+    /* Page Setup */
+    .h-jakarta { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .s-grotesk { font-family: 'Space Grotesk', sans-serif; }
+
+    /* Search Bar Modernization */
+    .search-container {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 100px;
+        padding: 8px 20px;
+        backdrop-filter: blur(10px);
+        transition: 0.3s;
+    }
+    .search-container:focus-within {
+        border-color: var(--accent-cyan);
+        box-shadow: 0 0 15px rgba(6, 182, 212, 0.15);
+    }
+    .search-input {
+        background: transparent !important;
+        border: none !important;
+        color: white !important;
+        box-shadow: none !important;
+    }
+    .search-input::placeholder { color: rgba(255,255,255,0.4); }
+
+    /* Premium Event Card */
+    .event-card {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 24px;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .event-card:hover {
+        transform: translateY(-8px);
+        border-color: rgba(6, 182, 212, 0.3);
+        background: rgba(255, 255, 255, 0.06);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .event-glow {
+        position: absolute;
+        top: -50px;
+        right: -50px;
+        width: 120px;
+        height: 120px;
+        background: radial-gradient(circle, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    /* Meta Info Styles */
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+        font-size: 0.85rem;
+        color: rgba(255,255,255,0.6);
+    }
+    .meta-item i { width: 16px; color: var(--accent-cyan); }
+
+    /* Capacity Bar */
+    .progress-wrap {
+        background: rgba(255,255,255,0.05);
+        height: 6px;
+        border-radius: 100px;
+        margin: 15px 0;
+        overflow: hidden;
+    }
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+        border-radius: 100px;
+        box-shadow: 0 0 10px rgba(6, 182, 212, 0.3);
+    }
+
+    /* Buttons */
+    .btn-view {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--glass-border);
+        color: white;
+        border-radius: 12px;
+        padding: 10px;
+        font-weight: 500;
+        transition: 0.3s;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .btn-view:hover {
+        background: var(--accent-blue);
+        border-color: var(--accent-blue);
+        color: white;
+    }
+
+    .badge-status {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 5px 12px;
+        border-radius: 100px;
+        background: rgba(34, 197, 94, 0.1);
+        color: #4ade80;
+        border: 1px solid rgba(34, 197, 94, 0.2);
+    }
+</style>
+
+<div class="container py-5 mt-3">
+    @* ── Page Header ── *@
+    <div class="row align-items-center mb-5">
+        <div class="col-md-7">
+            <h1 class="h-jakarta fw-bold text-white display-5">
+                Events <span class="text-cyan">Galaxy</span>
+            </h1>
+            <p class="s-grotesk text-muted fs-5">Explore, learn, and grow with the latest university happenings.</p>
+        </div>
+        <div class="col-md-5 text-md-end">
+            @if (User.IsInRole("Organizer"))
+            {
+                <a asp-action="Create" class="btn btn-create h-jakarta">
+                    <i class="fa-solid fa-plus-circle me-2"></i> Launch Event
+                </a>
+            }
+        </div>
     </div>
-}
 
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
-    <h2 class="mb-0">Events</h2>
-    @if (User.IsInRole(AppRoles.Organizer))
+    @* ── Success Message ── *@
+    @if (TempData["SuccessMessage"] is string success)
     {
-        <a asp-action="Create" class="btn btn-success">Create event</a>
+        <div class="alert alert-dismissible fade show glass-panel border-success mb-5" role="alert">
+            <div class="d-flex align-items-center gap-3">
+                <i class="fa-solid fa-circle-check text-success fs-4"></i>
+                <div class="text-white s-grotesk">@success</div>
+                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="alert"></button>
+            </div>
+        </div>
+    }
+
+    @* ── Search & Metrics ── *@
+    <div class="row g-4 mb-5 align-items-center">
+        <div class="col-lg-8">
+            <div class="search-container d-flex align-items-center">
+                <i class="fa-solid fa-magnifying-glass text-muted me-3"></i>
+                <input type="text" id="eventSearch" class="form-control search-input s-grotesk" placeholder="Search by name, department, or location...">
+            </div>
+        </div>
+        <div class="col-lg-4 text-lg-end">
+            <div class="s-grotesk text-muted small">
+                ACTIVE NODES: <span class="text-cyan fw-bold">@Model.Count()</span>
+            </div>
+        </div>
+    </div>
+
+    @* ── Events Grid ── *@
+    @if (!Model.Any())
+    {
+        <div class="glass-panel p-5 text-center my-5">
+            <div class="stat-circle icon-blue mx-auto mb-4" style="width:80px; height:80px; font-size: 2rem;">
+                <i class="fa-solid fa-ghost"></i>
+            </div>
+            <h3 class="h-jakarta text-white">No signals found.</h3>
+            <p class="text-muted s-grotesk">The events galaxy is currently quiet. Check back soon!</p>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4" id="eventGrid">
+            @foreach (var item in Model)
+            {
+                <div class="col-md-6 col-lg-4 event-card-wrapper">
+                    <div class="event-card p-4">
+                        <div class="event-glow"></div>
+                        
+                        @* Top Action *@
+                        <div class="d-flex justify-content-between align-items-start mb-4">
+                            <div class="stat-circle icon-cyan mb-0" style="width:45px; height:45px; border-radius:12px; font-size: 1rem;">
+                                <i class="fa-solid fa-atom"></i>
+                            </div>
+                            <span class="badge-status">● Live</span>
+                        </div>
+
+                        @* Content *@
+                        <div class="flex-grow-1">
+                            <h4 class="h-jakarta text-white fw-bold mb-1">@item.Name</h4>
+                            <p class="text-cyan s-grotesk small tracking-widest text-uppercase mb-4">@item.Department</p>
+                            
+                            <div class="meta-item">
+                                <i class="fa-regular fa-calendar-check"></i>
+                                <span>@item.StartDate.ToString("dd MMM yyyy")</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fa-solid fa-location-dot"></i>
+                                <span>@item.Location</span>
+                            </div>
+                            <div class="meta-item mb-4">
+                                <i class="fa-solid fa-user-astronaut"></i>
+                                <span class="text-muted small">Lead: @(item.Creator?.User?.Name ?? "Admin")</span>
+                            </div>
+                        </div>
+
+                        @* Footer Action *@
+                        <div class="mt-4 pt-3 border-top border-white border-opacity-10">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="s-grotesk text-muted small">Engagement Status</span>
+                                <span class="s-grotesk text-cyan fw-bold small">Open</span>
+                            </div>
+                            <div class="progress-wrap">
+                                <div class="progress-fill" style="width: 100%;"></div>
+                            </div>
+                            <a asp-action="Details" asp-route-id="@item.EventID" class="btn-view s-grotesk mt-3">
+                                Enter Details <i class="fa-solid fa-arrow-right-long"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
     }
 </div>
 
-@if (!Model.Any())
-{
-    <div class="alert alert-info">No events listed yet.</div>
-}
-else
-{
-    <div class="row g-4">
-        @foreach (var item in Model)
-        {
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-body d-flex flex-column">
-                        <h5 class="card-title">@item.Name</h5>
-                        <p class="card-text small text-muted mb-2">@item.Department</p>
-                        <p class="card-text mb-2"><strong>Starts:</strong> @item.StartDate.ToString("dd MMM yyyy")</p>
-                        <p class="card-text mb-2"><strong>Location:</strong> @item.Location</p>
-                        <p class="card-text small mb-4">Organizer: @item.Creator.User.Name</p>
-                        <a asp-action="Details" asp-route-id="@item.EventID" class="btn btn-primary mt-auto">Details</a>
-                    </div>
-                </div>
-            </div>
-        }
-    </div>
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#eventSearch').on('keyup', function() {
+                var value = $(this).val().toLowerCase();
+                $("#eventGrid .event-card-wrapper").filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                });
+            });
+        });
+    </script>
 }
