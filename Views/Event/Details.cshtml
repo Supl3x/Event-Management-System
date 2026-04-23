@@ -10,6 +10,7 @@
     var statusByCompetition = ViewBag.CompetitionRegistrationStatuses as IDictionary<int, string>
         ?? new Dictionary<int, string>();
     var volunteerEventRole = ViewBag.VolunteerEventRole as string;
+    var canManageEvent = ViewBag.CanManageEvent is bool allowed && allowed;
 }
 
 <style>
@@ -102,11 +103,17 @@
                 <span class="badge-live px-3 py-1 rounded-pill small">ID: #SYS-@Model?.EventID</span>
             </div>
             <div class="d-flex gap-2">
-                @if (User.IsInRole(AppRoles.Organizer) || User.IsInRole(AppRoles.Admin))
+                @if (canManageEvent)
                 {
                     <a asp-controller="StaffAssignment" asp-action="Event" asp-route-id="@Model?.EventID" class="btn btn-outline-warning px-3 rounded-pill s-grotesk">
                         Manage volunteers
                     </a>
+                    <form asp-action="Delete" asp-route-id="@Model?.EventID" method="post" onsubmit="return confirm('Delete this event and all related records? This cannot be undone.');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-outline-danger px-3 rounded-pill s-grotesk">
+                            Delete event
+                        </button>
+                    </form>
                 }
                 <a asp-action="Index" class="btn btn-outline-light px-4 rounded-pill s-grotesk">
                 <i class="fa-solid fa-arrow-left-long me-2"></i> Return to Grid
@@ -259,7 +266,7 @@
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="eventId" value="@Model?.EventID" />
                                         <button type="submit" class="btn btn-warning btn-lg rounded-pill fw-bold text-dark w-100">
-                                            REQUEST VERIFICATION ACCESS
+                                            APPLY FOR VOLUNTEER
                                         </button>
                                     </form>
                                 }

@@ -45,6 +45,8 @@ public class EventController : Controller
         }
 
         var userId = User.GetUserId();
+        var isAdmin = User.IsInRole(AppRoles.Admin);
+        ViewBag.CanManageEvent = userId is not null && (isAdmin || eventItem.CreatedBy == userId.Value);
         var statusByCompetition = new Dictionary<int, string>();
         if (userId is not null && eventItem.Competitions.Count > 0)
         {
@@ -114,6 +116,88 @@ public class EventController : Controller
         await _context.SaveChangesAsync();
 
         TempData["SuccessMessage"] = $"Event \"{entity.Name}\" was created.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = AppRoles.OrganizerOrAdmin)]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var actorUserId = User.GetUserId();
+        if (actorUserId is null)
+        {
+            return Challenge();
+        }
+
+        var eventEntity = await _context.Events.FirstOrDefaultAsync(e => e.EventID == id);
+        if (eventEntity == null)
+        {
+            TempData["ErrorMessage"] = "Event not found.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var isAdmin = User.IsInRole(AppRoles.Admin);
+        if (!isAdmin && eventEntity.CreatedBy != actorUserId.Value)
+        {
+            return Forbid();
+        }
+
+        await using var tx = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            var competitionIds = await _context.Competitions
+                .Where(c => c.EventID == id)
+                .Select(c => c.CompetitionID)
+                .ToListAsync();
+
+            if (competitionIds.Count > 0)
+            {
+                var registrations = await _context.Registrations
+                    .Where(r => competitionIds.Contains(r.CompetitionID))
+                    .ToListAsync();
+                _context.Registrations.RemoveRange(registrations);
+
+                var teams = await _context.Teams
+                    .Where(t => competitionIds.Contains(t.CompetitionID))
+                    .ToListAsync();
+                if (teams.Count > 0)
+                {
+                    var teamIds = teams.Select(t => t.TeamID).ToList();
+                    var members = await _context.TeamMembers
+                        .Where(m => teamIds.Contains(m.TeamID))
+                        .ToListAsync();
+                    _context.TeamMembers.RemoveRange(members);
+                    _context.Teams.RemoveRange(teams);
+                }
+
+                var competitionStaff = await _context.CompetitionStaffAssignments
+                    .Where(cs => competitionIds.Contains(cs.CompetitionID))
+                    .ToListAsync();
+                _context.CompetitionStaffAssignments.RemoveRange(competitionStaff);
+
+                var competitions = await _context.Competitions
+                    .Where(c => competitionIds.Contains(c.CompetitionID))
+                    .ToListAsync();
+                _context.Competitions.RemoveRange(competitions);
+            }
+
+            var eventStaff = await _context.EventStaffAssignments
+                .Where(es => es.EventID == id)
+                .ToListAsync();
+            _context.EventStaffAssignments.RemoveRange(eventStaff);
+
+            _context.Events.Remove(eventEntity);
+            await _context.SaveChangesAsync();
+            await tx.CommitAsync();
+        }
+        catch
+        {
+            await tx.RollbackAsync();
+            throw;
+        }
+
+        TempData["SuccessMessage"] = $"Event \"{eventEntity.Name}\" was deleted.";
         return RedirectToAction(nameof(Index));
     }
 }

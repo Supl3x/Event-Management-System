@@ -1,6 +1,10 @@
+@using System.Security.Claims
 @model IEnumerable<EventManagementPortal.Models.Event>
 @{
     ViewData["Title"] = "Events Portal";
+    var currentUserId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var parsedUserId)
+        ? parsedUserId
+        : (int?)null;
 }
 
 <style>
@@ -155,6 +159,16 @@
             </div>
         </div>
     }
+    @if (TempData["ErrorMessage"] is string error)
+    {
+        <div class="alert alert-dismissible fade show glass-panel border-danger mb-5" role="alert">
+            <div class="d-flex align-items-center gap-3">
+                <i class="fa-solid fa-circle-exclamation text-danger fs-4"></i>
+                <div class="text-white s-grotesk">@error</div>
+                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="alert"></button>
+            </div>
+        </div>
+    }
 
     @* ── Search & Metrics ── *@
     <div class="row g-4 mb-5 align-items-center">
@@ -230,6 +244,26 @@
                             <a asp-action="Details" asp-route-id="@item.EventID" class="btn-view s-grotesk mt-3">
                                 Enter Details <i class="fa-solid fa-arrow-right-long"></i>
                             </a>
+                            @if (User.IsInRole(AppRoles.Admin) || (User.IsInRole(AppRoles.Organizer) && currentUserId == item.CreatedBy))
+                            {
+                                <div class="d-grid gap-2 mt-2">
+                                    <a asp-controller="StaffAssignment"
+                                       asp-action="Event"
+                                       asp-route-id="@item.EventID"
+                                       class="btn btn-outline-warning btn-sm rounded-pill">
+                                        Assign volunteers
+                                    </a>
+                                    <form asp-action="Delete"
+                                          asp-route-id="@item.EventID"
+                                          method="post"
+                                          onsubmit="return confirm('Delete this event and all related records? This cannot be undone.');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill w-100">
+                                            Delete event
+                                        </button>
+                                    </form>
+                                </div>
+                            }
                         </div>
                     </div>
                 </div>

@@ -198,11 +198,11 @@ public class PaymentController : Controller
                 _context.EventStaffAssignments.Any(es =>
                     es.EventID == p.Registration!.Competition!.EventID
                     && es.UserID == verifierId.Value
-                    && !string.Equals(es.Role, "PendingApproval", StringComparison.OrdinalIgnoreCase))
+                    && !EF.Functions.ILike(es.Role, "PendingApproval"))
                 || _context.CompetitionStaffAssignments.Any(cs =>
                     cs.CompetitionID == p.Registration!.CompetitionID
                     && cs.UserID == verifierId.Value
-                    && !string.Equals(cs.Role, "PendingApproval", StringComparison.OrdinalIgnoreCase)));
+                    && !EF.Functions.ILike(cs.Role, "PendingApproval")));
         }
 
         var payments = await query.ToListAsync();
@@ -260,11 +260,11 @@ public class PaymentController : Controller
             var hasApproval = await _context.EventStaffAssignments.AnyAsync(es =>
                                   es.EventID == comp.EventID
                                   && es.UserID == verifierId.Value
-                                  && !string.Equals(es.Role, "PendingApproval", StringComparison.OrdinalIgnoreCase))
+                                  && !EF.Functions.ILike(es.Role, "PendingApproval"))
                               || await _context.CompetitionStaffAssignments.AnyAsync(cs =>
                                   cs.CompetitionID == comp.CompetitionID
                                   && cs.UserID == verifierId.Value
-                                  && !string.Equals(cs.Role, "PendingApproval", StringComparison.OrdinalIgnoreCase));
+                                  && !EF.Functions.ILike(cs.Role, "PendingApproval"));
             if (!hasApproval)
             {
                 TempData["ErrorMessage"] = "You need organizer approval for this event before verifying payments.";
@@ -383,11 +383,11 @@ public class PaymentController : Controller
             var hasApproval = await _context.EventStaffAssignments.AnyAsync(es =>
                                   es.EventID == comp.EventID
                                   && es.UserID == verifierId.Value
-                                  && !string.Equals(es.Role, "PendingApproval", StringComparison.OrdinalIgnoreCase))
+                                  && !EF.Functions.ILike(es.Role, "PendingApproval"))
                               || await _context.CompetitionStaffAssignments.AnyAsync(cs =>
                                   cs.CompetitionID == comp.CompetitionID
                                   && cs.UserID == verifierId.Value
-                                  && !string.Equals(cs.Role, "PendingApproval", StringComparison.OrdinalIgnoreCase));
+                                  && !EF.Functions.ILike(cs.Role, "PendingApproval"));
             if (!hasApproval)
             {
                 TempData["ErrorMessage"] = "You need organizer approval for this event before rejecting payments.";
