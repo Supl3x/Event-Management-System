@@ -20,7 +20,11 @@ public class Registration
     [StringLength(50)]
     public string Status { get; set; } = RegistrationStatuses.Pending;
 
+    public int? PriorityNumber { get; set; }
+
     public DateTime RegisteredAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
+    public int? UpdatedBy { get; set; }
 
     public User User { get; set; } = null!;
     public Competition Competition { get; set; } = null!;

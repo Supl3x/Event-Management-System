@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace EventManagementPortal.Models;
 
@@ -25,6 +24,7 @@ public class RegisterViewModel
 
     [Required]
     [EmailAddress]
+    [RegularExpression(@"^[^@\s]+@cloud\.neduet\.edu\.pk$", ErrorMessage = "Use your NED cloud email (name@cloud.neduet.edu.pk).")]
     public string Email { get; set; } = string.Empty;
 
     [Required]
@@ -42,7 +42,6 @@ public class RegisterViewModel
     [Compare(nameof(Password))]
     public string ConfirmPassword { get; set; } = string.Empty;
 
-    [Required]
     public string Role { get; set; } = AppRoles.Student;
 
     [StringLength(50)]
@@ -53,12 +52,4 @@ public class RegisterViewModel
 
     public string? ReturnUrl { get; set; }
 
-    [BindNever]
-    public IEnumerable<SelectListItem> RoleOptions =>
-    [
-        new(AppRoles.Student, AppRoles.Student),
-        new(AppRoles.Admin, AppRoles.Admin),
-        new(AppRoles.Organizer, AppRoles.Organizer),
-        new(AppRoles.Volunteer, AppRoles.Volunteer)
-    ];
 }

@@ -87,6 +87,12 @@ public class AccountController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Register(RegisterViewModel model)
     {
+        model.Role = AppRoles.Student;
+        if (!model.Email.EndsWith("@cloud.neduet.edu.pk", StringComparison.OrdinalIgnoreCase))
+        {
+            ModelState.AddModelError(nameof(model.Email), "Use your NED cloud email (name@cloud.neduet.edu.pk).");
+        }
+
         if (model.Role == AppRoles.Student)
         {
             if (string.IsNullOrWhiteSpace(model.RollNumber))
@@ -134,26 +140,12 @@ public class AccountController : Controller
             return View(model);
         }
 
-        switch (model.Role)
+        _db.Students.Add(new Student
         {
-            case AppRoles.Admin:
-                _db.Admins.Add(new Admin { UserID = user.UserID });
-                break;
-            case AppRoles.Organizer:
-                _db.Organizers.Add(new OrganizerProfile { UserID = user.UserID });
-                break;
-            case AppRoles.Volunteer:
-                _db.Volunteers.Add(new Volunteer { UserID = user.UserID });
-                break;
-            default:
-                _db.Students.Add(new Student
-                {
-                    UserID = user.UserID,
-                    RollNumber = model.RollNumber!.Trim(),
-                    Department = model.Department!.Trim()
-                });
-                break;
-        }
+            UserID = user.UserID,
+            RollNumber = model.RollNumber!.Trim(),
+            Department = model.Department!.Trim()
+        });
 
         try
         {

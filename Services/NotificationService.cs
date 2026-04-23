@@ -1,17 +1,29 @@
+using EventManagementPortal.Data;
+using EventManagementPortal.Models;
+
 namespace EventManagementPortal.Services;
 
-/// <summary>No <c>notification</c> table in the DB schema; only pushes realtime messages.</summary>
 public class NotificationService : INotificationService
 {
+    private readonly ApplicationDbContext _db;
     private readonly ISupabaseRealtimeService _supabaseRealtimeService;
 
-    public NotificationService(ISupabaseRealtimeService supabaseRealtimeService)
+    public NotificationService(ApplicationDbContext db, ISupabaseRealtimeService supabaseRealtimeService)
     {
+        _db = db;
         _supabaseRealtimeService = supabaseRealtimeService;
     }
 
-    public Task CreateAsync(int userId, string message)
+    public async Task CreateAsync(int userId, string message)
     {
-        return _supabaseRealtimeService.PublishNotificationAsync(userId, message);
+        _db.Notifications.Add(new Notification
+        {
+            UserID = userId,
+            Message = message,
+            CreatedAt = DateTime.UtcNow,
+            IsRead = false
+        });
+        await _db.SaveChangesAsync();
+        await _supabaseRealtimeService.PublishNotificationAsync(userId, message);
     }
 }

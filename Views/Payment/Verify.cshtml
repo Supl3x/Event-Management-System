@@ -171,9 +171,17 @@
                                     @if (item.Status == EventManagementPortal.Models.PaymentStatuses.Pending)
                                     {
                                         <form asp-action="VerifyPayment" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
                                             <input type="hidden" name="paymentId" value="@item.PaymentID" />
                                             <button type="submit" class="btn btn-action-sm btn-verify">
                                                 <i class="fa-solid fa-check me-1"></i> Authorize
+                                            </button>
+                                        </form>
+                                        <form asp-action="RejectPayment" method="post" class="d-inline ms-1">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="paymentId" value="@item.PaymentID" />
+                                            <button type="submit" class="btn btn-action-sm btn-outline-danger">
+                                                <i class="fa-solid fa-xmark me-1"></i> Reject
                                             </button>
                                         </form>
                                     }

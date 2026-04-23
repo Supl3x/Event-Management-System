@@ -2,8 +2,39 @@
     ViewData["Title"] = "Volunteer hub";
 }
 
-<div class="alert alert-warning">
-    <h4 class="alert-heading">Volunteer hub</h4>
-    <p class="mb-2">Review payment screenshots and approve them so students receive tickets.</p>
-    <a asp-controller="Payment" asp-action="Verify" class="btn btn-warning btn-sm text-dark">Verify payments</a>
+<div class="container py-5 mt-3">
+    <div class="row align-items-end mb-5">
+        <div class="col-lg-8">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <div class="live-dot" style="width:10px; height:10px;"></div>
+                <span class="text-cyan text-uppercase fw-medium tracking-wider" style="font-size: 12px;">Volunteer Operations</span>
+            </div>
+            <h1 class="h-jakarta fw-bold text-white display-5 mb-0">Volunteer Hub</h1>
+            <p class="text-muted s-grotesk fs-5 mt-2 mb-0">Process payment proofs and help ticket issuance run smoothly.</p>
+        </div>
+        <div class="col-lg-4 text-lg-end mt-4">
+            <a asp-controller="Payment" asp-action="Verify" class="btn btn-warning px-4">
+                <i class="fa-solid fa-shield-check me-2"></i>Open Payment Desk
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="saas-card p-4 h-100">
+                <div class="comp-stat-icon mb-3"><i class="fa-solid fa-receipt"></i></div>
+                <h5 class="text-white h-jakarta mb-2">Verify Payments</h5>
+                <p class="text-muted mb-4">Review screenshots and approve or reject submissions from registered participants.</p>
+                <a asp-controller="Payment" asp-action="Verify" class="btn btn-outline-light btn-sm">Open verifier</a>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="saas-card p-4 h-100">
+                <div class="comp-stat-icon mb-3"><i class="fa-solid fa-ticket"></i></div>
+                <h5 class="text-white h-jakarta mb-2">Ticket Flow</h5>
+                <p class="text-muted mb-4">Approved payments trigger registration approval and ticket generation workflows.</p>
+                <a asp-controller="Dashboard" asp-action="Index" class="btn btn-outline-light btn-sm">Back to dashboard</a>
+            </div>
+        </div>
+    </div>
 </div>

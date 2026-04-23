@@ -33,4 +33,5 @@ public class User
 
     public ICollection<Registration> Registrations { get; set; } = new List<Registration>();
     public ICollection<Payment> PaymentsVerified { get; set; } = new List<Payment>();
+    public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 }

@@ -22,6 +22,10 @@ public class ApplicationDbContext : DbContext
     public DbSet<Team> Teams { get; set; }
     public DbSet<TeamMember> TeamMembers { get; set; }
     public DbSet<Payment> Payments { get; set; }
+    public DbSet<OrganizerRoleRequest> OrganizerRoleRequests { get; set; }
+    public DbSet<EventStaff> EventStaffAssignments { get; set; }
+    public DbSet<CompetitionStaff> CompetitionStaffAssignments { get; set; }
+    public DbSet<Notification> Notifications { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -68,6 +72,22 @@ public class ApplicationDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        modelBuilder.Entity<OrganizerRoleRequest>(e =>
+        {
+            e.ToTable("organizerrolerequest");
+            e.HasKey(x => x.RequestID);
+            e.Property(x => x.RequestID).HasColumnName("requestid");
+            e.Property(x => x.StudentID).HasColumnName("studentid");
+            e.Property(x => x.ApprovedBy).HasColumnName("approvedby");
+            e.Property(x => x.Status).HasColumnName("status").HasMaxLength(20);
+            e.Property(x => x.RequestedAt).HasColumnName("requestedat");
+            e.Property(x => x.ReviewedAt).HasColumnName("reviewedat");
+            e.HasOne(x => x.Student).WithMany().HasForeignKey(x => x.StudentID)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Reviewer).WithMany().HasForeignKey(x => x.ApprovedBy)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
         modelBuilder.Entity<Student>(e =>
         {
             e.ToTable("student");
@@ -91,6 +111,9 @@ public class ApplicationDbContext : DbContext
             e.Property(x => x.StartDate).HasColumnName("startdate").HasColumnType("date");
             e.Property(x => x.EndDate).HasColumnName("enddate").HasColumnType("date");
             e.Property(x => x.CreatedBy).HasColumnName("createdby");
+            e.Property(x => x.CreatedAt).HasColumnName("createdat");
+            e.Property(x => x.UpdatedAt).HasColumnName("updatedat");
+            e.Property(x => x.UpdatedBy).HasColumnName("updatedby");
             e.HasOne(ev => ev.Creator).WithMany(o => o.EventsCreated).HasForeignKey(ev => ev.CreatedBy)
                 .HasPrincipalKey(o => o.UserID).OnDelete(DeleteBehavior.Restrict);
         });
@@ -108,8 +131,38 @@ public class ApplicationDbContext : DbContext
             e.Property(x => x.EndDate).HasColumnName("enddate").HasColumnType("date");
             e.Property(x => x.MaxTeamSize).HasColumnName("maxteamsize");
             e.Property(x => x.EntryFee).HasColumnName("entryfee").HasColumnType("numeric(12,2)");
+            e.Property(x => x.AvailableSeats).HasColumnName("availableseats");
+            e.Property(x => x.CreatedAt).HasColumnName("createdat");
+            e.Property(x => x.UpdatedAt).HasColumnName("updatedat");
+            e.Property(x => x.UpdatedBy).HasColumnName("updatedby");
             e.HasOne(c => c.Event).WithMany(ev => ev.Competitions).HasForeignKey(c => c.EventID)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<EventStaff>(e =>
+        {
+            e.ToTable("eventstaff");
+            e.HasKey(x => new { x.EventID, x.UserID });
+            e.Property(x => x.EventID).HasColumnName("eventid");
+            e.Property(x => x.UserID).HasColumnName("userid");
+            e.Property(x => x.Role).HasColumnName("role").HasMaxLength(100);
+            e.HasOne(x => x.Event).WithMany().HasForeignKey(x => x.EventID)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Volunteer).WithMany().HasForeignKey(x => x.UserID)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<CompetitionStaff>(e =>
+        {
+            e.ToTable("competitionstaff");
+            e.HasKey(x => new { x.CompetitionID, x.UserID });
+            e.Property(x => x.CompetitionID).HasColumnName("competitionid");
+            e.Property(x => x.UserID).HasColumnName("userid");
+            e.Property(x => x.Role).HasColumnName("role").HasMaxLength(100);
+            e.HasOne(x => x.Competition).WithMany().HasForeignKey(x => x.CompetitionID)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Volunteer).WithMany().HasForeignKey(x => x.UserID)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<Registration>(e =>
@@ -122,7 +175,10 @@ public class ApplicationDbContext : DbContext
             e.Property(x => x.TeamID).HasColumnName("teamid");
             e.Property(x => x.Type).HasColumnName("type").HasMaxLength(50);
             e.Property(x => x.Status).HasColumnName("status").HasMaxLength(50);
+            e.Property(x => x.PriorityNumber).HasColumnName("prioritynumber");
             e.Property(x => x.RegisteredAt).HasColumnName("registeredat");
+            e.Property(x => x.UpdatedAt).HasColumnName("updatedat");
+            e.Property(x => x.UpdatedBy).HasColumnName("updatedby");
             e.HasOne(r => r.User).WithMany(u => u.Registrations).HasForeignKey(r => r.UserID);
             e.HasOne(r => r.Competition).WithMany(c => c.Registrations).HasForeignKey(r => r.CompetitionID);
             e.HasOne(r => r.Team).WithMany(t => t.Registrations).HasForeignKey(r => r.TeamID)
@@ -140,6 +196,8 @@ public class ApplicationDbContext : DbContext
             e.Property(x => x.VerifiedBy).HasColumnName("verifiedby");
             e.Property(x => x.SubmittedAt).HasColumnName("submittedat");
             e.Property(x => x.VerifiedAt).HasColumnName("verifiedat");
+            e.Property(x => x.UpdatedAt).HasColumnName("updatedat");
+            e.Property(x => x.UpdatedBy).HasColumnName("updatedby");
             e.HasIndex(x => x.RegistrationID).IsUnique();
             e.HasOne(p => p.Registration).WithOne(r => r.Payment).HasForeignKey<Payment>(p => p.RegistrationID)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -156,6 +214,8 @@ public class ApplicationDbContext : DbContext
             e.Property(x => x.QrCode).HasColumnName("qrcode");
             e.Property(x => x.UniqueCode).HasColumnName("uniquecode").HasMaxLength(50);
             e.Property(x => x.GeneratedAt).HasColumnName("generatedat");
+            e.Property(x => x.UpdatedAt).HasColumnName("updatedat");
+            e.Property(x => x.UpdatedBy).HasColumnName("updatedby");
             e.HasIndex(x => x.RegistrationID).IsUnique();
             e.HasOne(t => t.Registration).WithOne(r => r.Ticket).HasForeignKey<Ticket>(t => t.RegistrationID)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -186,6 +246,19 @@ public class ApplicationDbContext : DbContext
             e.Property(x => x.Department).HasColumnName("department").HasMaxLength(100);
             e.Property(x => x.Email).HasColumnName("email").HasMaxLength(256);
             e.HasOne(tm => tm.Team).WithMany(t => t.Members).HasForeignKey(tm => tm.TeamID)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Notification>(e =>
+        {
+            e.ToTable("notification");
+            e.HasKey(x => x.NotificationID);
+            e.Property(x => x.NotificationID).HasColumnName("notificationid");
+            e.Property(x => x.UserID).HasColumnName("userid");
+            e.Property(x => x.Message).HasColumnName("message").HasMaxLength(500);
+            e.Property(x => x.CreatedAt).HasColumnName("createdat");
+            e.Property(x => x.IsRead).HasColumnName("isread");
+            e.HasOne(x => x.User).WithMany(u => u.Notifications).HasForeignKey(x => x.UserID)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

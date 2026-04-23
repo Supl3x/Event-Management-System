@@ -6,6 +6,9 @@ public static class RegistrationStatuses
     public const string Pending = "Pending";
     public const string Approved = "Approved";
     public const string Rejected = "Rejected";
+    public const string Confirmed = "Confirmed";
+    public const string Waitlist = "Waitlist";
+    public const string Cancelled = "Cancelled";
 }
 
 /// <summary>Values aligned with CHECK constraints on <c>payment.status</c>.</summary>

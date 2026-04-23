@@ -24,6 +24,10 @@ public class Event
     [Required]
     public DateTime EndDate { get; set; }
 
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
+    public int? UpdatedBy { get; set; }
+
     /// <summary>FK to <c>organizer.userid</c> (who created the event).</summary>
     public int CreatedBy { get; set; }
 

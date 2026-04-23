@@ -1,0 +1,60 @@
+@model EventManagementPortal.Models.IndividualCompetitionRegistrationViewModel
+@{
+    ViewData["Title"] = "Competition Registration";
+}
+
+<div class="container py-4">
+    <div class="saas-card p-4">
+        <h3 class="text-white mb-2">Competition Registration</h3>
+        <p class="text-muted mb-4">Review competition details and confirm your registration.</p>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <label class="form-label text-muted small">Competition</label>
+                <div class="text-white">@Model.CompetitionName</div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label text-muted small">Event</label>
+                <div class="text-white">@Model.EventName</div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label text-muted small">Location</label>
+                <div class="text-white">@Model.Location</div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label text-muted small">Date</label>
+                <div class="text-white">@Model.StartDate.ToString("dd MMM yyyy")</div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label text-muted small">Entry Fee</label>
+                <div class="text-white">@Model.EntryFee.ToString("0.00")</div>
+            </div>
+        </div>
+
+        <form asp-action="Create" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            <input asp-for="CompetitionID" type="hidden" />
+            <input asp-for="CompetitionName" type="hidden" />
+            <input asp-for="EventName" type="hidden" />
+            <input asp-for="Location" type="hidden" />
+            <input asp-for="StartDate" type="hidden" />
+            <input asp-for="EntryFee" type="hidden" />
+
+            <div class="form-check mb-4">
+                <input asp-for="ConfirmRegistration" class="form-check-input" />
+                <label asp-for="ConfirmRegistration" class="form-check-label text-white"></label>
+                <span asp-validation-for="ConfirmRegistration" class="text-danger d-block"></span>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-cyan fw-bold">Submit Registration</button>
+                <a asp-controller="Competition" asp-action="Details" asp-route-id="@Model.CompetitionID" class="btn btn-outline-light">Back</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

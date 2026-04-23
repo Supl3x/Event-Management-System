@@ -1,8 +1,12 @@
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventManagementPortal", "EventManagementPortal.csproj", "{50174DD3-8A91-A79F-59E3-FBA65B85493C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{223B4AC4-E3D1-4555-B6A0-3D4BB4849B75}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventManagementPortal.Tests", "tests\EventManagementPortal.Tests\EventManagementPortal.Tests.csproj", "{C7A19D59-F934-4CAB-BA5A-D65772286819}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -14,11 +18,18 @@ Global
 		{50174DD3-8A91-A79F-59E3-FBA65B85493C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{50174DD3-8A91-A79F-59E3-FBA65B85493C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{50174DD3-8A91-A79F-59E3-FBA65B85493C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C7A19D59-F934-4CAB-BA5A-D65772286819}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C7A19D59-F934-4CAB-BA5A-D65772286819}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C7A19D59-F934-4CAB-BA5A-D65772286819}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C7A19D59-F934-4CAB-BA5A-D65772286819}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {908350C7-0EEC-4EBC-81DE-213C0D7A910D}
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C7A19D59-F934-4CAB-BA5A-D65772286819} = {223B4AC4-E3D1-4555-B6A0-3D4BB4849B75}
 	EndGlobalSection
 EndGlobal

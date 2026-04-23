@@ -33,6 +33,13 @@ public class Competition
     [Column(TypeName = "numeric(12,2)")]
     public decimal EntryFee { get; set; }
 
+    [Range(0, int.MaxValue)]
+    public int AvailableSeats { get; set; } = 100;
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
+    public int? UpdatedBy { get; set; }
+
     public Event Event { get; set; } = null!;
     public ICollection<Registration> Registrations { get; set; } = new List<Registration>();
     public ICollection<Team> Teams { get; set; } = new List<Team>();

@@ -5,14 +5,14 @@
 }
 
 <style>
-    /* Z-Index Fix: Taake Hero section navbar ko block na kare */
+    /* Keep hero section below navbar */
     .hero-section {
         position: relative;
-        z-index: 1; /* Navbar (z-index 1030) se niche rakha hai */
+        z-index: 1;
         overflow: hidden;
     }
 
-    /* Glow elements ko interactable hone se rokne ke liye */
+    /* Prevent decorative glow from capturing clicks */
     .hero-glow, .hero-glow-right {
         pointer-events: none;
         z-index: -1;
@@ -45,7 +45,7 @@
                 </h1>
 
                 <p class="lead mb-5 pe-lg-4 s-grotesk text-muted" style="font-weight:300; line-height:1.75;">
-                    The modern, all-in-one platform to discover university events,
+                    The modern, all-in-one platform to discover NED University events,
                     register for hackathons, and secure digital tickets instantly.
                 </p>
 
@@ -88,7 +88,7 @@
                             <div class="ticket-header">Preview Ticket</div>
                             <div class="p-4 text-center">
                                 <div class="bg-white d-inline-block p-2 rounded mb-3">
-                                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=EventHub" width="60" alt="QR" />
+                                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=EventHub-NED" width="60" alt="QR" />
                                 </div>
                                 <p class="text-white mb-0 small">Tech Conf 2026</p>
                                 <code class="text-cyan">#STUDENT-99</code>

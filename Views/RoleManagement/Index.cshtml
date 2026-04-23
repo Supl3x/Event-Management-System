@@ -1,0 +1,148 @@
+@model EventManagementPortal.Models.RoleManagementPageViewModel
+@{
+    ViewData["Title"] = "Role management";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-white mb-1">Role management</h2>
+            <p class="text-muted mb-0">Review organizer requests and manage promotions.</p>
+        </div>
+        <a asp-controller="Dashboard" asp-action="Admin" class="btn btn-outline-light btn-sm">Back to admin hub</a>
+    </div>
+
+    <div class="saas-card p-4 mb-4">
+        <h5 class="text-white mb-3">Pending organizer requests</h5>
+        <div class="table-responsive">
+            @if (!Model.PendingRequests.Any())
+            {
+                <p class="mb-0 text-muted">No pending requests.</p>
+            }
+            else
+            {
+                    <table class="table table-dark table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Email</th>
+                                <th>Requested at</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var req in Model.PendingRequests)
+                            {
+                                <tr>
+                                    <td>@req.Student.User.Name</td>
+                                    <td>@req.Student.User.Email</td>
+                                    <td>@req.RequestedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                                    <td class="text-end">
+                                        <form asp-action="ReviewOrganizerRequest" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="requestId" value="@req.RequestID" />
+                                            <input type="hidden" name="approve" value="true" />
+                                            <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                                        </form>
+                                        <form asp-action="ReviewOrganizerRequest" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="requestId" value="@req.RequestID" />
+                                            <input type="hidden" name="approve" value="false" />
+                                            <button type="submit" class="btn btn-outline-danger btn-sm">Reject</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+            }
+        </div>
+    </div>
+
+    <div class="saas-card p-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <h5 class="text-white mb-0">Promote users</h5>
+            <div class="input-group input-group-sm" style="max-width: 320px;">
+                <span class="input-group-text bg-dark text-light border-secondary">Search</span>
+                <input id="roleSearchInput"
+                       type="text"
+                       class="form-control bg-dark text-light border-secondary"
+                       placeholder="Name, email, or role" />
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table id="promoteUsersTable" class="table table-dark table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Roles</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model.Users)
+                    {
+                        <tr>
+                            <td>@user.Name</td>
+                            <td>@user.Email</td>
+                            <td>
+                                @if (user.IsStudent) { <span class="badge bg-primary me-1">Student</span> }
+                                @if (user.IsOrganizer) { <span class="badge bg-success me-1">Organizer</span> }
+                                @if (user.IsVolunteer) { <span class="badge bg-warning text-dark me-1">Volunteer</span> }
+                                @if (user.IsAdmin) { <span class="badge bg-danger me-1">Admin</span> }
+                            </td>
+                            <td class="text-end">
+                                @if (!user.IsOrganizer)
+                                {
+                                    <form asp-action="PromoteOrganizer" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="userId" value="@user.UserID" />
+                                        <button type="submit" class="btn btn-success btn-sm">Make organizer</button>
+                                    </form>
+                                }
+                                @if (!user.IsVolunteer)
+                                {
+                                    <form asp-action="PromoteVolunteer" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="userId" value="@user.UserID" />
+                                        <button type="submit" class="btn btn-warning btn-sm text-dark">Make volunteer</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <p id="roleSearchEmptyState" class="text-muted small mt-3 mb-0 d-none">No users matched your search.</p>
+    </div>
+</div>
+
+<script>
+    (() => {
+        const input = document.getElementById('roleSearchInput');
+        const rows = Array.from(document.querySelectorAll('#promoteUsersTable tbody tr'));
+        const emptyState = document.getElementById('roleSearchEmptyState');
+
+        if (!input || rows.length === 0) return;
+
+        const filterRows = () => {
+            const term = input.value.trim().toLowerCase();
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const visible = term.length === 0 || text.includes(term);
+                row.classList.toggle('d-none', !visible);
+                if (visible) visibleCount++;
+            });
+
+            if (emptyState) {
+                emptyState.classList.toggle('d-none', visibleCount !== 0);
+            }
+        };
+
+        input.addEventListener('input', filterRows);
+    })();
+</script>

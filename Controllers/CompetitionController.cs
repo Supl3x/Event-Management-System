@@ -1,4 +1,5 @@
 using EventManagementPortal.Data;
+using EventManagementPortal.Infrastructure;
 using EventManagementPortal.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -46,18 +47,37 @@ public class CompetitionController : Controller
     }
 
     [HttpGet]
-    [Authorize(Roles = AppRoles.Admin)]
+    [Authorize(Roles = AppRoles.OrganizerOrAdmin)]
     public async Task<IActionResult> Create()
     {
-        await PopulateEventsDropDownAsync();
-        return View(new CompetitionCreateViewModel { MaxTeamSize = 1, EntryFee = 0 });
+        var userId = User.GetUserId();
+        if (userId is null)
+        {
+            return Challenge();
+        }
+
+        var isAdmin = await _context.Admins.AnyAsync(a => a.UserID == userId.Value);
+        await PopulateEventsDropDownAsync(userId.Value, isAdmin);
+        return View(new CompetitionCreateViewModel { MaxTeamSize = 1, EntryFee = 0, AvailableSeats = 100 });
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = AppRoles.Admin)]
+    [Authorize(Roles = AppRoles.OrganizerOrAdmin)]
     public async Task<IActionResult> Create(CompetitionCreateViewModel vm)
     {
+        var userId = User.GetUserId();
+        if (userId is null)
+        {
+            return Challenge();
+        }
+        var isOrganizer = await _context.Organizers.AnyAsync(o => o.UserID == userId.Value);
+        var isAdmin = await _context.Admins.AnyAsync(a => a.UserID == userId.Value);
+        if (!isOrganizer && !isAdmin)
+        {
+            return Forbid();
+        }
+
         Event? parentEvent = null;
         if (vm.EventID > 0)
         {
@@ -66,6 +86,10 @@ public class CompetitionController : Controller
             if (parentEvent == null)
             {
                 ModelState.AddModelError(nameof(vm.EventID), "Select a valid event.");
+            }
+            else if (!isAdmin && parentEvent.CreatedBy != userId.Value)
+            {
+                ModelState.AddModelError(nameof(vm.EventID), "You can only create competitions for events you created.");
             }
         }
         else
@@ -94,10 +118,14 @@ public class CompetitionController : Controller
         {
             ModelState.AddModelError(nameof(vm.EntryFee), "Entry fee cannot be negative.");
         }
+        if (vm.AvailableSeats < 0)
+        {
+            ModelState.AddModelError(nameof(vm.AvailableSeats), "Available seats cannot be negative.");
+        }
 
         if (!ModelState.IsValid)
         {
-            await PopulateEventsDropDownAsync(vm.EventID);
+            await PopulateEventsDropDownAsync(userId.Value, isAdmin, vm.EventID);
             return View(vm);
         }
 
@@ -110,7 +138,8 @@ public class CompetitionController : Controller
             StartDate = vm.StartDate!.Value.ToDateTime(TimeOnly.MinValue),
             EndDate = vm.EndDate!.Value.ToDateTime(TimeOnly.MinValue),
             MaxTeamSize = vm.MaxTeamSize,
-            EntryFee = vm.EntryFee
+            EntryFee = vm.EntryFee,
+            AvailableSeats = vm.AvailableSeats
         };
 
         _context.Competitions.Add(entity);
@@ -127,7 +156,7 @@ public class CompetitionController : Controller
                 string.IsNullOrWhiteSpace(pg.MessageText)
                     ? "The database rejected these values (e.g. dates outside the parent event)."
                     : pg.MessageText);
-            await PopulateEventsDropDownAsync(vm.EventID);
+            await PopulateEventsDropDownAsync(userId.Value, isAdmin, vm.EventID);
             _context.Entry(entity).State = EntityState.Detached;
             return View(vm);
         }
@@ -136,9 +165,15 @@ public class CompetitionController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    private async Task PopulateEventsDropDownAsync(int? selectedEventId = null)
+    private async Task PopulateEventsDropDownAsync(int userId, bool isAdmin, int? selectedEventId = null)
     {
-        var events = await _context.Events
+        var eventsQuery = _context.Events.AsNoTracking();
+        if (!isAdmin)
+        {
+            eventsQuery = eventsQuery.Where(e => e.CreatedBy == userId);
+        }
+
+        var events = await eventsQuery
             .AsNoTracking()
             .OrderBy(e => e.Name)
             .Select(e => new

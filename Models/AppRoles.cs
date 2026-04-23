@@ -9,4 +9,5 @@ public static class AppRoles
 
     /// <summary>ASP.NET Core Authorize(Roles): comma means OR.</summary>
     public const string OrganizerOrVolunteer = $"{Organizer},{Volunteer}";
+    public const string OrganizerOrAdmin = $"{Organizer},{Admin}";
 }

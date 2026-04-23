@@ -21,6 +21,8 @@ public class Payment
     public DateTime SubmittedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime? VerifiedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public int? UpdatedBy { get; set; }
 
     public Registration Registration { get; set; } = null!;
     public User? Verifier { get; set; }

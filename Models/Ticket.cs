@@ -16,6 +16,8 @@ public class Ticket
     public string UniqueCode { get; set; } = string.Empty;
 
     public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
+    public int? UpdatedBy { get; set; }
 
     public Registration Registration { get; set; } = null!;
 }

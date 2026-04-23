@@ -24,9 +24,11 @@ public class DashboardController : Controller
             .Select(c => c.Value)
             .Distinct()
             .ToList();
+        var displayName = User.FindFirstValue(ClaimTypes.GivenName)
+            ?? User.Identity?.Name?.Split('@')[0];
 
         var model = await _dashboardService.BuildDashboardAsync(
-            User.Identity?.Name,
+            displayName,
             roles,
             User.GetUserId());
         return View(model);

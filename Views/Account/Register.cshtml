@@ -42,7 +42,7 @@
 
                         <div class="col-12">
                             <label asp-for="Email" class="form-label text-white-50 small mb-1">University Email</label>
-                            <input asp-for="Email" class="form-control custom-input" placeholder="name@nust.edu.pk" />
+                            <input asp-for="Email" class="form-control custom-input" placeholder="name@cloud.neduet.edu.pk" />
                             <span asp-validation-for="Email" class="text-danger x-small"></span>
                         </div>
 
@@ -64,13 +64,9 @@
                             <span asp-validation-for="ConfirmPassword" class="text-danger x-small"></span>
                         </div>
 
-                        <div class="col-12">
-                            <label asp-for="Role" class="form-label text-white-50 small mb-1">I am a...</label>
-                            <select asp-for="Role" asp-items="Model.RoleOptions" class="form-select custom-input" id="roleSelect"></select>
-                            <span asp-validation-for="Role" class="text-danger x-small"></span>
-                        </div>
+                        <input type="hidden" asp-for="Role" value="Student" />
 
-                        <div id="studentFields" class="col-12" style="display:none;">
+                        <div id="studentFields" class="col-12">
                             <div class="p-3 rounded-3 border border-secondary border-opacity-10 shadow-inner" style="background: rgba(255,255,255,0.02);">
                                 <div class="mb-3">
                                     <label asp-for="RollNumber" class="form-label text-white-50 small mb-1">Roll Number</label>
@@ -137,23 +133,4 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const roleSelect = document.getElementById('roleSelect');
-            const studentFields = document.getElementById('studentFields');
-            
-            function toggle() {
-                // Ham check kar rahe hain ke value mein "Student" (case insensitive) hai ya nahi
-                const val = roleSelect.value.toLowerCase();
-                if (val.includes('student')) {
-                    studentFields.style.display = 'block';
-                } else {
-                    studentFields.style.display = 'none';
-                }
-            }
-
-            roleSelect.addEventListener('change', toggle);
-            toggle(); // Run on load
-        });
-    </script>
 }

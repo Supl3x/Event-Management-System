@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using EventManagementPortal.Data;
 using EventManagementPortal.Services;
+using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,6 +38,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await ApplyVersionedMigrationsAsync(db, app.Environment.ContentRootPath);
     await ApplicationDbSeeder.SeedAsync(db);
 }
 
@@ -75,3 +77,55 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
+
+static async Task ApplyVersionedMigrationsAsync(ApplicationDbContext db, string contentRootPath)
+{
+    var migrationsDir = Path.Combine(contentRootPath, "Database", "Migrations");
+    if (!Directory.Exists(migrationsDir))
+    {
+        return;
+    }
+
+    var migrationFiles = Directory.GetFiles(migrationsDir, "*.sql")
+        .OrderBy(Path.GetFileName)
+        .ToList();
+    if (migrationFiles.Count == 0)
+    {
+        return;
+    }
+
+    try
+    {
+        await db.Database.ExecuteSqlRawAsync("""
+            CREATE TABLE IF NOT EXISTS public.schema_migrations (
+              id SERIAL PRIMARY KEY,
+              filename VARCHAR(255) NOT NULL UNIQUE,
+              appliedat TIMESTAMP NOT NULL DEFAULT NOW()
+            );
+            """);
+
+        foreach (var file in migrationFiles)
+        {
+            var filename = Path.GetFileName(file);
+            var alreadyApplied = await db.Database
+                .SqlQueryRaw<int>("SELECT 1 FROM public.schema_migrations WHERE filename = {0}", filename)
+                .AnyAsync();
+            if (alreadyApplied)
+            {
+                continue;
+            }
+
+            var sql = await File.ReadAllTextAsync(file);
+            if (!string.IsNullOrWhiteSpace(sql))
+            {
+                await db.Database.ExecuteSqlRawAsync(sql);
+            }
+            await db.Database.ExecuteSqlRawAsync(
+                "INSERT INTO public.schema_migrations(filename, appliedat) VALUES ({0}, NOW())", filename);
+        }
+    }
+    catch
+    {
+        // Best-effort startup migration runner for environments without EF migrations.
+    }
+}

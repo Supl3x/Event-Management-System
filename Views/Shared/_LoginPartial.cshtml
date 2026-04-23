@@ -3,6 +3,14 @@
 <ul class="navbar-nav align-items-center gap-3">
 @if (User.Identity?.IsAuthenticated ?? false)
 {
+    var displayName = User.FindFirstValue(ClaimTypes.GivenName)
+        ?? User.Identity?.Name?.Split('@')[0]
+        ?? "User";
+    var roleLabel = User.IsInRole("Admin") ? "Admin"
+        : User.IsInRole("Organizer") ? "Organizer"
+        : User.IsInRole("Volunteer") ? "Volunteer"
+        : User.IsInRole("Student") ? "Student"
+        : "User";
     <li class="nav-item dropdown position-relative" id="profileDropdownArea">
         <a class="nav-link d-flex align-items-center gap-2 p-0" 
            href="javascript:void(0)" 
@@ -11,16 +19,17 @@
             <div class="user-avatar-sm" style="width: 32px; height: 32px; background: #1e293b; border: 1px solid #06b6d4; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #06b6d4;">
                 <i class="fa-solid fa-user-astronaut"></i>
             </div>
-            <span class="d-none d-lg-inline text-light small s-grotesk">hello</span>
+            <span class="d-none d-lg-inline text-light small s-grotesk">@displayName</span>
+            <span class="badge bg-dark border border-info-subtle d-none d-xl-inline">@roleLabel</span>
         </a>
         
         <ul class="dropdown-menu dropdown-menu-end p-2 shadow-lg border-0 mt-2" 
             id="userDropdownMenu"
-            style="background: #0a1020 !important; border: 1px solid rgba(255,255,255,0.15) !important; min-width: 210px; z-index: 2000; position: absolute; right: 0; display: none;">
+            style="background: #0a1020 !important; border: 1px solid rgba(255,255,255,0.15) !important; min-width: 210px; z-index: 6000; position: absolute; right: 0; display: none;">
             
             <li class="px-3 py-3 border-bottom border-white border-opacity-10 mb-2">
                 <div class="text-cyan fw-bold small mb-0">Portal Identity</div>
-                <div class="text-muted" style="font-size: 0.75rem;">@User.Identity.Name</div>
+                <div class="text-muted" style="font-size: 0.75rem;">@User.Identity?.Name</div>
             </li>
 
             <li>

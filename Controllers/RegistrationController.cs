@@ -39,6 +39,7 @@ public class RegistrationController : Controller
         var currentUser = await _context.Users.AsNoTracking()
             .FirstOrDefaultAsync(u => u.UserID == userId.Value);
         var competition = await _context.Competitions.AsNoTracking()
+            .Include(c => c.Event)
             .FirstOrDefaultAsync(c => c.CompetitionID == competitionId);
 
         if (currentUser == null || competition == null)
@@ -85,35 +86,119 @@ public class RegistrationController : Controller
             };
             return View("RegisterTeam", vm);
         }
-
-        var registration = new Registration
+        return View(new IndividualCompetitionRegistrationViewModel
         {
-            UserID = currentUser.UserID,
-            CompetitionID = competitionId,
-            Type = RegistrationTypes.Individual,
-            Status = RegistrationStatuses.Pending,
-            RegisteredAt = DateTime.UtcNow
-        };
+            CompetitionID = competition.CompetitionID,
+            CompetitionName = competition.Name,
+            EventName = competition.Event?.Name ?? "Campus Event",
+            Location = competition.Location,
+            StartDate = competition.StartDate,
+            EntryFee = competition.EntryFee
+        });
+    }
 
-        _context.Registrations.Add(registration);
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = AppRoles.Student)]
+    public async Task<IActionResult> Create(IndividualCompetitionRegistrationViewModel vm)
+    {
+        var userId = User.GetUserId();
+        if (userId is null)
+        {
+            return Challenge();
+        }
 
+        var currentUser = await _context.Users.AsNoTracking()
+            .FirstOrDefaultAsync(u => u.UserID == userId.Value);
+        var competition = await _context.Competitions.AsNoTracking()
+            .Include(c => c.Event)
+            .FirstOrDefaultAsync(c => c.CompetitionID == vm.CompetitionID);
+
+        if (currentUser == null || competition == null)
+        {
+            return NotFound();
+        }
+
+        if (!vm.ConfirmRegistration)
+        {
+            ModelState.AddModelError(nameof(vm.ConfirmRegistration), "Please confirm before submitting registration.");
+        }
+
+        var alreadyRegistered = await _context.Registrations
+            .AnyAsync(r => r.UserID == currentUser.UserID && r.CompetitionID == vm.CompetitionID);
+        if (alreadyRegistered)
+        {
+            TempData["ErrorMessage"] = "You are already registered for this competition.";
+            return RedirectToAction("Details", "Competition", new { id = vm.CompetitionID });
+        }
+
+        if (!ModelState.IsValid)
+        {
+            vm.CompetitionName = competition.Name;
+            vm.EventName = competition.Event?.Name ?? "Campus Event";
+            vm.Location = competition.Location;
+            vm.StartDate = competition.StartDate;
+            vm.EntryFee = competition.EntryFee;
+            return View(vm);
+        }
+
+        await using var tx = await _context.Database.BeginTransactionAsync();
+        Registration registration;
         try
         {
+            await _context.Database.ExecuteSqlInterpolatedAsync(
+                $"SELECT 1 FROM competition WHERE competitionid = {vm.CompetitionID} FOR UPDATE");
+            var lockedCompetition = await _context.Competitions
+                .FirstOrDefaultAsync(c => c.CompetitionID == vm.CompetitionID);
+            if (lockedCompetition == null)
+            {
+                await tx.RollbackAsync();
+                return NotFound();
+            }
+
+            var maxPriority = await _context.Registrations
+                .Where(r => r.CompetitionID == vm.CompetitionID && r.Status == RegistrationStatuses.Waitlist)
+                .MaxAsync(r => (int?)r.PriorityNumber) ?? 0;
+            var decision = BookingEngine.DecideNewRegistration(lockedCompetition.AvailableSeats, maxPriority);
+            lockedCompetition.AvailableSeats = decision.UpdatedAvailableSeats;
+
+            registration = new Registration
+            {
+                UserID = currentUser.UserID,
+                CompetitionID = vm.CompetitionID,
+                Type = RegistrationTypes.Individual,
+                Status = decision.RegistrationStatus,
+                PriorityNumber = decision.WaitlistPriority,
+                RegisteredAt = DateTime.UtcNow
+            };
+
+            _context.Registrations.Add(registration);
             await _context.SaveChangesAsync();
+            await tx.CommitAsync();
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException pg && pg.SqlState == "P0001")
         {
+            await tx.RollbackAsync();
             TempData["ErrorMessage"] = pg.MessageText;
-            return RedirectToAction("Details", "Competition", new { id = competitionId });
+            return RedirectToAction("Details", "Competition", new { id = vm.CompetitionID });
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pg
+            && pg.SqlState == PostgresErrorCodes.UniqueViolation)
+        {
+            await tx.RollbackAsync();
+            TempData["ErrorMessage"] = "You are already registered for this competition.";
+            return RedirectToAction("Details", "Competition", new { id = vm.CompetitionID });
         }
 
         await _supabaseRealtimeService.PublishSeatUpdateAsync(competition.CompetitionID, 0);
 
         await _notificationService.CreateAsync(
             currentUser.UserID,
-            $"Registration submitted for '{competition.Name}'. Status: {RegistrationStatuses.Pending}.");
+            $"Registration submitted for '{competition.Name}'. Status: {registration.Status}.");
 
-        TempData["SuccessMessage"] = "Registration submitted. Awaiting approval and payment verification.";
+        TempData["SuccessMessage"] = registration.Status == RegistrationStatuses.Confirmed
+            ? "Registration confirmed."
+            : "Competition is currently full. You were added to the waitlist.";
         return RedirectToAction(nameof(MyRegistrations));
     }
 
@@ -204,13 +289,30 @@ public class RegistrationController : Controller
                 });
             }
 
+            await _context.Database.ExecuteSqlInterpolatedAsync(
+                $"SELECT 1 FROM competition WHERE competitionid = {vm.CompetitionID} FOR UPDATE");
+            var lockedCompetition = await _context.Competitions
+                .FirstOrDefaultAsync(c => c.CompetitionID == vm.CompetitionID);
+            if (lockedCompetition == null)
+            {
+                await tx.RollbackAsync();
+                return NotFound();
+            }
+
+            var maxPriority = await _context.Registrations
+                .Where(r => r.CompetitionID == vm.CompetitionID && r.Status == RegistrationStatuses.Waitlist)
+                .MaxAsync(r => (int?)r.PriorityNumber) ?? 0;
+            var decision = BookingEngine.DecideNewRegistration(lockedCompetition.AvailableSeats, maxPriority);
+            lockedCompetition.AvailableSeats = decision.UpdatedAvailableSeats;
+
             _context.Registrations.Add(new Registration
             {
                 UserID = currentUser.UserID,
                 CompetitionID = vm.CompetitionID,
                 TeamID = team.TeamID,
                 Type = RegistrationTypes.Team,
-                Status = RegistrationStatuses.Pending,
+                Status = decision.RegistrationStatus,
+                PriorityNumber = decision.WaitlistPriority,
                 RegisteredAt = DateTime.UtcNow
             });
 
@@ -226,6 +328,14 @@ public class RegistrationController : Controller
             NormalizeMemberList(vm, competition.MaxTeamSize, currentUser);
             return View("RegisterTeam", vm);
         }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pg
+            && pg.SqlState == PostgresErrorCodes.UniqueViolation)
+        {
+            await tx.RollbackAsync();
+            _context.ChangeTracker.Clear();
+            TempData["ErrorMessage"] = "You are already registered for this competition.";
+            return RedirectToAction("Details", "Competition", new { id = vm.CompetitionID });
+        }
         catch
         {
             await tx.RollbackAsync();
@@ -237,9 +347,9 @@ public class RegistrationController : Controller
 
         await _notificationService.CreateAsync(
             currentUser.UserID,
-            $"Team registration submitted for '{competition.Name}'. Status: {RegistrationStatuses.Pending}.");
+            $"Team registration submitted for '{competition.Name}'. Status: check your registrations.");
 
-        TempData["SuccessMessage"] = "Team registration submitted. Awaiting approval and payment verification.";
+        TempData["SuccessMessage"] = "Team registration submitted successfully.";
         return RedirectToAction(nameof(MyRegistrations));
     }
 
@@ -305,7 +415,8 @@ public class RegistrationController : Controller
             RegistrationType = r.Type,
             RegistrationStatus = r.Status,
             DisplayStatus = ResolveDisplayStatus(r),
-            CanUploadPayment = r.Status == RegistrationStatuses.Pending && r.Payment == null
+            CanUploadPayment = r.Payment == null
+                && (r.Status == RegistrationStatuses.Confirmed || r.Status == RegistrationStatuses.Approved)
         }).ToList();
 
         return View(model);

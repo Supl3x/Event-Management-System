@@ -29,4 +29,7 @@ public class CompetitionCreateViewModel
     public int MaxTeamSize { get; set; } = 1;
 
     public decimal EntryFee { get; set; }
+
+    [Range(0, int.MaxValue)]
+    public int AvailableSeats { get; set; } = 100;
 }

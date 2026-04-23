@@ -1,0 +1,132 @@
+@model EventManagementPortal.Models.StaffAssignmentsViewModel
+@{
+    ViewData["Title"] = $"{Model.ParentType} staff assignments";
+    var isEvent = Model.ParentType == "Event";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-white mb-1">@Model.ParentType staff assignments</h2>
+            <p class="text-muted mb-0">@Model.ParentName</p>
+        </div>
+        @if (isEvent)
+        {
+            <a asp-controller="Event" asp-action="Details" asp-route-id="@Model.ParentId" class="btn btn-outline-light btn-sm">Back to event</a>
+        }
+        else
+        {
+            <a asp-controller="Competition" asp-action="Details" asp-route-id="@Model.ParentId" class="btn btn-outline-light btn-sm">Back to competition</a>
+        }
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="saas-card p-4">
+                <h5 class="text-white mb-3">Assigned volunteers</h5>
+                <div class="table-responsive">
+                    @if (!Model.Assigned.Any())
+                    {
+                        <p class="mb-0 text-muted">No volunteers assigned yet.</p>
+                    }
+                    else
+                    {
+                        <table class="table table-dark table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in Model.Assigned)
+                                {
+                                    <tr>
+                                        <td>@row.Name</td>
+                                        <td>@row.Email</td>
+                                        <td>@row.Role</td>
+                                        <td class="text-end">
+                                            @if (isEvent)
+                                            {
+                                                @if (string.Equals(row.Role, "PendingApproval", StringComparison.OrdinalIgnoreCase))
+                                                {
+                                                    <form asp-action="ApproveEventVolunteer" method="post" class="d-inline me-1">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="eventId" value="@Model.ParentId" />
+                                                        <input type="hidden" name="userId" value="@row.UserID" />
+                                                        <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                                                    </form>
+                                                }
+                                                <form asp-action="RemoveEventVolunteer" method="post">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="eventId" value="@Model.ParentId" />
+                                                    <input type="hidden" name="userId" value="@row.UserID" />
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm">Remove</button>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <form asp-action="RemoveCompetitionVolunteer" method="post">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="competitionId" value="@Model.ParentId" />
+                                                    <input type="hidden" name="userId" value="@row.UserID" />
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm">Remove</button>
+                                                </form>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="saas-card p-4">
+                <h5 class="text-white mb-3">Available volunteers</h5>
+                <div>
+                    @if (!Model.Available.Any())
+                    {
+                        <p class="mb-0 text-muted">No available volunteers.</p>
+                    }
+                    else
+                    {
+                        @foreach (var row in Model.Available)
+                        {
+                            <div class="border border-secondary rounded p-2 mb-2 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="text-white">@row.Name</div>
+                                    <small class="text-muted">@row.Email</small>
+                                </div>
+                                @if (isEvent)
+                                {
+                                    <form asp-action="AddEventVolunteer" method="post" class="d-flex gap-2">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="eventId" value="@Model.ParentId" />
+                                        <input type="hidden" name="userId" value="@row.UserID" />
+                                        <input type="text" name="role" value="Volunteer" class="form-control form-control-sm" style="width:110px;" />
+                                        <button type="submit" class="btn btn-primary btn-sm">Add</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form asp-action="AddCompetitionVolunteer" method="post" class="d-flex gap-2">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="competitionId" value="@Model.ParentId" />
+                                        <input type="hidden" name="userId" value="@row.UserID" />
+                                        <input type="text" name="role" value="Volunteer" class="form-control form-control-sm" style="width:110px;" />
+                                        <button type="submit" class="btn btn-primary btn-sm">Add</button>
+                                    </form>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

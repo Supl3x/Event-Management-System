@@ -36,11 +36,32 @@ public class EventController : Controller
             .AsNoTracking()
             .Include(e => e.Creator)
             .ThenInclude(c => c.User)
+            .Include(e => e.Competitions)
             .FirstOrDefaultAsync(e => e.EventID == id);
 
         if (eventItem == null)
         {
             return NotFound();
+        }
+
+        var userId = User.GetUserId();
+        var statusByCompetition = new Dictionary<int, string>();
+        if (userId is not null && eventItem.Competitions.Count > 0)
+        {
+            var competitionIds = eventItem.Competitions.Select(c => c.CompetitionID).ToList();
+            statusByCompetition = await _context.Registrations
+                .AsNoTracking()
+                .Where(r => r.UserID == userId.Value && competitionIds.Contains(r.CompetitionID))
+                .ToDictionaryAsync(r => r.CompetitionID, r => r.Status);
+        }
+        ViewBag.CompetitionRegistrationStatuses = statusByCompetition;
+
+        if (userId is not null && User.IsInRole(AppRoles.Volunteer))
+        {
+            var volunteerAssignment = await _context.EventStaffAssignments
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.EventID == eventItem.EventID && x.UserID == userId.Value);
+            ViewBag.VolunteerEventRole = volunteerAssignment?.Role;
         }
 
         return View(eventItem);

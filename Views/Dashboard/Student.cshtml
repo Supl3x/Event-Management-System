@@ -1,104 +1,45 @@
-@model EventManagementPortal.Models.Event
 @{
-    ViewData["Title"] = "Event Details";
-    // Null-check logic to satisfy the compiler warning CS8602
-    var organizerName = Model?.Creator?.User?.Name ?? "Admin";
-    var organizerEmail = Model?.Creator?.User?.Email ?? "info@eventhub.com";
+    ViewData["Title"] = "Student Hub";
 }
 
-<div class="container py-5">
-    @* ── Header Actions ── *@
-    <div class="d-flex justify-content-between align-items-center mb-5">
-        <div>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb mb-2">
-                    <li class="breadcrumb-item"><a asp-controller="Event" asp-action="Index" class="text-cyan text-decoration-none">Events</a></li>
-                    <li class="breadcrumb-item active text-muted" aria-current="page">Details</li>
-                </ol>
-            </nav>
-            <h1 class="display-4 text-white h-jakarta">@Model?.Name</h1>
+<div class="container py-5 mt-3">
+    <div class="row align-items-end mb-5">
+        <div class="col-lg-8">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <div class="live-dot" style="width:10px; height:10px;"></div>
+                <span class="text-cyan text-uppercase fw-medium tracking-wider" style="font-size: 12px;">Student Operations</span>
+            </div>
+            <h1 class="h-jakarta fw-bold text-white display-5 mb-0">Student Hub</h1>
+            <p class="text-muted s-grotesk fs-5 mt-2 mb-0">Register in competitions, track approvals, and manage your event participation.</p>
         </div>
-        <a asp-action="Index" class="btn btn-outline-light px-4 rounded-pill">
-            <i class="fa-solid fa-arrow-left me-2"></i> Back
-        </a>
     </div>
 
-    <div class="row g-5">
-        <div class="col-lg-8">
-            @* ── Info Card ── *@
-            <div class="saas-card p-4 mb-4">
-                <h4 class="text-white mb-4">Event Overview</h4>
-                <div class="row g-4">
-                    <div class="col-md-6">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="comp-stat-icon"><i class="fa-solid fa-building-user"></i></div>
-                            <div>
-                                <p class="mb-0 text-muted small text-uppercase fw-bold">Department</p>
-                                <p class="text-white mb-0">@Model?.Department</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="comp-stat-icon text-cyan" style="background:var(--cyan-glow);"><i class="fa-solid fa-location-dot"></i></div>
-                            <div>
-                                <p class="mb-0 text-muted small text-uppercase fw-bold">Location</p>
-                                <p class="text-white mb-0">@Model?.Location</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <hr class="my-4 border-secondary opacity-25">
-                
-                <h5 class="text-white mb-3">Organized By</h5>
-                <div class="d-flex align-items-center gap-3">
-                    <div class="user-avatar-sm" style="width:40px; height:40px;"><i class="fa-solid fa-user-tie"></i></div>
-                    <div>
-                        <p class="text-white mb-0">@organizerName</p>
-                        <p class="text-muted small mb-0">@organizerEmail</p>
-                    </div>
-                </div>
-            </div>
-
-            @* ── Digital Ticket ── *@
-            <div class="ticket-preview-card shadow-lg mt-5">
-                <div class="ticket-header">Campus Official Entry Ticket</div>
-                <div class="row g-0">
-                    <div class="col-md-8 p-4 border-end border-secondary border-opacity-25">
-                        <h3 class="text-white mb-1">@Model?.Name</h3>
-                        <span class="badge badge-live">Digital Access</span>
-                        <div class="row mt-4">
-                            <div class="col-6">
-                                <p class="text-muted small mb-0">DATE</p>
-                                <p class="text-white">@Model?.StartDate.ToString("MMM dd, yyyy")</p>
-                            </div>
-                            <div class="col-6">
-                                <p class="text-muted small mb-0">VENUE</p>
-                                <p class="text-white">@Model?.Location</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 p-4 text-center d-flex flex-column align-items-center justify-content-center bg-navy bg-opacity-50">
-                        <div class="bg-white p-2 rounded mb-2">
-                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=@Model?.EventID" width="85" alt="QR">
-                        </div>
-                        <code class="text-cyan small">#EVENT-@Model?.EventID</code>
-                    </div>
-                </div>
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="saas-card p-4 h-100">
+                <div class="comp-stat-icon mb-3"><i class="fa-solid fa-trophy"></i></div>
+                <h5 class="text-white h-jakarta mb-2">Browse Competitions</h5>
+                <p class="text-muted mb-4">Find open competitions, team limits, and event schedules.</p>
+                <a asp-controller="Competition" asp-action="Index" class="btn btn-outline-light btn-sm">Open competitions</a>
             </div>
         </div>
-
         <div class="col-lg-4">
-            <div class="saas-card p-4 sticky-top" style="top: 100px;">
-                <h5 class="text-white mb-4">Registration</h5>
-                <div class="seat-bar-wrap mb-2"><div class="seat-bar" style="width: 75%;"></div></div>
-                <p class="text-muted small mb-4">Join 150+ students already registered</p>
-
-                <div class="d-grid gap-3">
-                    <a href="#" class="btn btn-primary btn-lg">Register Now <i class="fa-solid fa-bolt ms-2"></i></a>
-                    <button class="btn btn-outline-light">Share Event</button>
-                </div>
+            <div class="saas-card p-4 h-100">
+                <div class="comp-stat-icon mb-3"><i class="fa-solid fa-ticket"></i></div>
+                <h5 class="text-white h-jakarta mb-2">My Registrations</h5>
+                <p class="text-muted mb-4">Track registration, payment status, and issued tickets in one place.</p>
+                <a asp-controller="Registration" asp-action="MyRegistrations" class="btn btn-outline-light btn-sm">View registrations</a>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="saas-card p-4 h-100">
+                <div class="comp-stat-icon mb-3"><i class="fa-solid fa-user-plus"></i></div>
+                <h5 class="text-white h-jakarta mb-2">Organizer Request</h5>
+                <p class="text-muted mb-4">Need organizer permissions? Send a request for admin approval.</p>
+                <form asp-controller="RoleRequest" asp-action="RequestOrganizer" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-warning btn-sm">Send organizer request</button>
+                </form>
             </div>
         </div>
     </div>

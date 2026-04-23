@@ -1,0 +1,40 @@
+@model IEnumerable<EventManagementPortal.Models.Notification>
+@{
+    ViewData["Title"] = "Notifications";
+}
+
+<div class="container py-4">
+    <h2 class="text-white mb-3">Notifications</h2>
+    @if (!Model.Any())
+    {
+        <div class="saas-card p-4 text-muted">No notifications yet.</div>
+    }
+    else
+    {
+        <div class="saas-card p-3">
+            <div class="list-group list-group-flush">
+                @foreach (var n in Model)
+                {
+                    <div class="list-group-item bg-transparent border-secondary text-light d-flex justify-content-between align-items-center">
+                        <div>
+                            <div>@n.Message</div>
+                            <small class="text-muted">@n.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</small>
+                        </div>
+                        @if (!n.IsRead)
+                        {
+                            <form asp-action="MarkRead" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@n.NotificationID" />
+                                <button type="submit" class="btn btn-outline-light btn-sm">Mark read</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success">Read</span>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
