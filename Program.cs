@@ -5,7 +5,7 @@ using EventManagementPortal.Services;
 using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
-
+builder.Configuration.AddEnvironmentVariables();
 // Add services to the container.
 var connectionString =
     builder.Configuration.GetValue<string>("ConnectionStrings:DefaultConnection")
