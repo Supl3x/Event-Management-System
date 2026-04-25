@@ -7,7 +7,10 @@ using Npgsql;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+var connectionString =
+    builder.Configuration.GetValue<string>("ConnectionStrings:DefaultConnection")
+    ?? builder.Configuration.GetValue<string>("ConnectionStrings__DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 // Supabase pooler (6543) can be slow from distant regions; keep Command Timeout high enough.
 // Do not use EnableRetryOnFailure here: after a read timeout the INSERT may already be committed,
 // and retrying SaveChanges() causes duplicate key on users_email (23505).
