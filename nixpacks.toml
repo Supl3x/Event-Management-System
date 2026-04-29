@@ -1,8 +1,11 @@
 [phases.setup]
 nixPkgs = ["dotnet-sdk_8"]
 
+[phases.install]
+cmds = ["dotnet restore EventManagementPortal.csproj"]
+
 [phases.build]
-cmds = ["dotnet publish -c Release -o out"]
+cmds = ["dotnet publish EventManagementPortal.csproj -c Release -o out"]
 
 [start]
 cmd = "dotnet out/EventManagementPortal.dll"
