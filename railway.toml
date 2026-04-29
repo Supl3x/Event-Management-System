@@ -2,6 +2,6 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "dotnet EventManagementPortal.dll"
+startCommand = "cd out && dotnet EventManagementPortal.dll"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 10

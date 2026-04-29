@@ -8,4 +8,4 @@ cmds = ["dotnet restore EventManagementPortal.csproj"]
 cmds = ["dotnet publish EventManagementPortal.csproj -c Release -o out"]
 
 [start]
-cmd = "dotnet out/EventManagementPortal.dll"
+cmd = "cd out && dotnet EventManagementPortal.dll"
