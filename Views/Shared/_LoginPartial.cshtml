@@ -1,6 +1,6 @@
 ﻿@using System.Security.Claims
 
-<ul class="navbar-nav align-items-center gap-3">
+<ul class="navbar-nav align-items-center gap-2 nav-auth-menu">
 @if (User.Identity?.IsAuthenticated ?? false)
 {
     var displayName = User.FindFirstValue(ClaimTypes.GivenName)
@@ -11,31 +11,38 @@
         : User.IsInRole("Volunteer") ? "Volunteer"
         : User.IsInRole("Student") ? "Student"
         : "User";
-    <li class="nav-item dropdown position-relative" id="profileDropdownArea">
-        <a class="nav-link d-flex align-items-center gap-2 p-0" 
-           href="javascript:void(0)" 
+    var shortDisplayName = displayName
+        .Split(' ', System.StringSplitOptions.RemoveEmptyEntries)
+        .FirstOrDefault() ?? displayName;
+    <li class="nav-item dropdown position-relative">
+        <a class="nav-link d-flex align-items-center gap-2 p-0 nav-profile-trigger"
+           href="#"
            id="userDropdownBtn"
-           style="cursor: pointer; position: relative; z-index: 1050;">
-            <div class="user-avatar-sm" style="width: 32px; height: 32px; background: #1e293b; border: 1px solid #06b6d4; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #06b6d4;">
+           role="button"
+           data-bs-toggle="dropdown"
+           aria-expanded="false"
+           title="@displayName">
+            <div class="user-avatar-sm">
                 <i class="fa-solid fa-user-astronaut"></i>
             </div>
-            <span class="d-none d-lg-inline text-light small s-grotesk">@displayName</span>
-            <span class="badge bg-dark border border-info-subtle d-none d-xl-inline">@roleLabel</span>
+            <span class="d-none d-xl-inline text-light small nav-display-name nav-display-name--full">@displayName</span>
+            <span class="d-inline d-xl-none text-light small nav-display-name nav-display-name--compact">@shortDisplayName</span>
+            <span class="badge role-pill-dynamic d-none d-xxl-inline">@roleLabel</span>
         </a>
         
-        <ul class="dropdown-menu dropdown-menu-end p-2 shadow-lg border-0 mt-2" 
+        <ul class="dropdown-menu dropdown-menu-end p-2 shadow-lg border-0 mt-2 neon-dropdown" 
             id="userDropdownMenu"
-            style="background: #0a1020 !important; border: 1px solid rgba(255,255,255,0.15) !important; min-width: 210px; z-index: 6000; position: absolute; right: 0; display: none;">
+            style="min-width: 210px;">
             
             <li class="px-3 py-3 border-bottom border-white border-opacity-10 mb-2">
                 <div class="text-cyan fw-bold small mb-0">Portal Identity</div>
-                <div class="text-muted" style="font-size: 0.75rem;">@User.Identity?.Name</div>
+                <div class="text-muted small">@User.Identity?.Name</div>
             </li>
 
             <li>
                 <a class="dropdown-item rounded-2 d-flex align-items-center gap-3 py-2" asp-controller="Dashboard" asp-action="Index">
                     <i class="fa-solid fa-gauge-high text-cyan"></i> 
-                    <span class="s-grotesk text-white">Command Center</span>
+                    <span class="text-white">Command Center</span>
                 </a>
             </li>
             
@@ -43,9 +50,9 @@
             
             <li>
                 <form asp-controller="Account" asp-action="Logout" method="post" class="m-0 p-0">
-                    <button type="submit" class="dropdown-item rounded-2 d-flex align-items-center gap-3 py-2 text-danger w-100 border-0 bg-transparent text-start" style="font-weight: bold;">
+                    <button type="submit" class="dropdown-item rounded-2 d-flex align-items-center gap-3 py-2 text-danger w-100 border-0 bg-transparent text-start fw-bold">
                         <i class="fa-solid fa-right-from-bracket"></i> 
-                        <span class="s-grotesk">Logout</span>
+                        <span>Logout</span>
                     </button>
                 </form>
             </li>
@@ -58,34 +65,3 @@ else
     <li class="nav-item"><a class="btn btn-cyan btn-sm px-4 rounded-pill fw-bold" asp-controller="Account" asp-action="Register">Sign Up</a></li>
 }
 </ul>
-
-<script>
-    // Manual Trigger: Har haal mein chalega
-    document.addEventListener('DOMContentLoaded', function () {
-        const btn = document.getElementById('userDropdownBtn');
-        const menu = document.getElementById('userDropdownMenu');
-
-        if (btn && menu) {
-            btn.addEventListener('click', function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-                const isVisible = menu.style.display === 'block';
-                menu.style.display = isVisible ? 'none' : 'block';
-            });
-
-            // Kahin bhi bahar click karne se band ho jaye
-            document.addEventListener('click', function () {
-                menu.style.display = 'none';
-            });
-        }
-    });
-</script>
-
-<style>
-    .dropdown-item { transition: 0.2s; color: rgba(255,255,255,0.7) !important; }
-    .dropdown-item:hover {
-        background: rgba(6, 182, 212, 0.1) !important;
-        color: #06b6d4 !important;
-        transform: translateX(5px);
-    }
-</style>

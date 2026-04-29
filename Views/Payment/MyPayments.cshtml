@@ -3,40 +3,48 @@
     ViewData["Title"] = "My Payments";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="mb-0">My Payments</h2>
-    <a asp-controller="Registration" asp-action="MyRegistrations" class="btn btn-primary">Upload from registrations</a>
-</div>
-
-@if (!Model.Any())
-{
-    <div class="alert alert-info">No payments uploaded yet.</div>
-}
-else
-{
-    <div class="table-responsive">
-        <table class="table table-striped align-middle">
-            <thead>
-                <tr>
-                    <th>Competition</th>
-                    <th>Screenshot</th>
-                    <th>Status</th>
-                    <th>Submitted</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model)
-                {
-                    var badgeClass = item.Status == EventManagementPortal.Models.PaymentStatuses.Approved ? "bg-success"
-                        : item.Status == EventManagementPortal.Models.PaymentStatuses.Rejected ? "bg-danger" : "bg-warning text-dark";
-                    <tr>
-                        <td>@item.Registration!.Competition.Name</td>
-                        <td><a href="@item.Screenshot" target="_blank" class="btn btn-sm btn-outline-secondary">View</a></td>
-                        <td><span class="badge @badgeClass">@item.Status</span></td>
-                        <td>@item.SubmittedAt.ToString("dd MMM yyyy, hh:mm tt")</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+<div class="container py-5 mt-2">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <div class="hero-badge mb-2">
+                <span class="live-dot"></span>
+                Payment telemetry
+            </div>
+            <h2 class="mb-0 h-jakarta text-white">My Payments</h2>
+        </div>
+        <a asp-controller="Registration" asp-action="MyRegistrations" class="btn btn-primary">Upload from registrations</a>
     </div>
-}
+
+    @if (!Model.Any())
+    {
+        <div class="glass-panel p-4 text-center text-muted">No payments uploaded yet.</div>
+    }
+    else
+    {
+        <div class="table-responsive glass-panel p-2">
+            <table class="table table-striped align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Competition</th>
+                        <th>Screenshot</th>
+                        <th>Status</th>
+                        <th>Submitted</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        var badgeClass = item.Status == EventManagementPortal.Models.PaymentStatuses.Approved ? "badge-open"
+                            : item.Status == EventManagementPortal.Models.PaymentStatuses.Rejected ? "bg-danger" : "badge-few";
+                        <tr>
+                            <td>@item.Registration!.Competition.Name</td>
+                            <td><a href="@item.Screenshot" target="_blank" class="btn btn-sm btn-outline-light">View</a></td>
+                            <td><span class="badge @badgeClass">@item.Status</span></td>
+                            <td>@item.SubmittedAt.ToString("dd MMM yyyy, hh:mm tt")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

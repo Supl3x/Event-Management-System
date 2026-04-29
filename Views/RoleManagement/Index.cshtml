@@ -12,7 +12,7 @@
         <a asp-controller="Dashboard" asp-action="Admin" class="btn btn-outline-light btn-sm">Back to admin hub</a>
     </div>
 
-    <div class="saas-card p-4 mb-4">
+    <div class="saas-card p-4 mb-4" data-no-tilt="true">
         <h5 class="text-white mb-3">Pending organizer requests</h5>
         <div class="table-responsive">
             @if (!Model.PendingRequests.Any())
@@ -59,7 +59,7 @@
         </div>
     </div>
 
-    <div class="saas-card p-4">
+    <div class="saas-card p-4" data-no-tilt="true">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
             <h5 class="text-white mb-0">Promote users</h5>
             <div class="input-group input-group-sm" style="max-width: 320px;">

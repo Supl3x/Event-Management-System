@@ -27,9 +27,9 @@
         }
     </style>
 </head>
-<body class="d-flex flex-column min-vh-100">
+<body class="d-flex flex-column min-vh-100 neon-app">
     <header>
-        <nav class="navbar navbar-expand-md navbar-dark navbar-emp">
+        <nav class="navbar navbar-expand-xl navbar-dark navbar-emp">
             <div class="container">
                 <a class="navbar-brand d-flex align-items-center" asp-controller="Home" asp-action="Index">
                     <div class="brand-mark">
@@ -113,14 +113,31 @@
                             }
                         }
                     </ul>
-                    <partial name="_LoginPartial" />
+                    <div class="d-flex align-items-center gap-2 ms-xl-3 nav-right-tools">
+                        <div class="theme-intensity-wrap">
+                            <label for="themeIntensitySelect" class="theme-intensity-label">FX</label>
+                            <select id="themeIntensitySelect" class="form-select form-select-sm theme-intensity-select" aria-label="Theme intensity">
+                                <option value="cinematic">Cinematic</option>
+                                <option value="high">High</option>
+                                <option value="balanced">Balanced</option>
+                                <option value="light">Light</option>
+                            </select>
+                        </div>
+                        <partial name="_LoginPartial" />
+                    </div>
                 </div>
             </div>
         </nav>
     </header>
 
-    <main role="main" class="flex-shrink-0">
-        @RenderBody()
+    <div class="neon-bg-orb neon-bg-orb--left" aria-hidden="true"></div>
+    <div class="neon-bg-orb neon-bg-orb--right" aria-hidden="true"></div>
+    <div class="neon-grid-overlay" aria-hidden="true"></div>
+
+    <main role="main" class="flex-shrink-0 app-main pb-5">
+        <div class="container app-shell py-4 py-lg-5">
+            @RenderBody()
+        </div>
     </main>
 
     <footer class="footer-emp mt-auto">
