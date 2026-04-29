@@ -1,0 +1,64 @@
+@model List<EventManagementPortal.Models.VolunteerEventRequest>
+@{
+    ViewData["Title"] = "Volunteer Requests";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-white mb-1">Volunteer requests</h2>
+            <p class="text-muted mb-0">Review student requests for your events.</p>
+        </div>
+        <a asp-controller="Dashboard" asp-action="Organizer" class="btn btn-outline-light btn-sm">Back to organizer hub</a>
+    </div>
+
+    <div class="saas-card p-4" data-no-tilt="true">
+        @if (!Model.Any())
+        {
+            <p class="mb-0 text-muted">No volunteer requests are awaiting your review.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-dark table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Email</th>
+                            <th>Event</th>
+                            <th>Admin decision</th>
+                            <th>Requested at</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var req in Model)
+                        {
+                            <tr>
+                                <td>@req.Student.User.Name</td>
+                                <td>@req.Student.User.Email</td>
+                                <td>@req.Event.Name</td>
+                                <td>@req.AdminDecision</td>
+                                <td>@req.RequestedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                                <td class="text-end">
+                                    <form asp-action="ReviewVolunteerRequestByOrganizer" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="requestId" value="@req.RequestID" />
+                                        <input type="hidden" name="approve" value="true" />
+                                        <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                                    </form>
+                                    <form asp-action="ReviewVolunteerRequestByOrganizer" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="requestId" value="@req.RequestID" />
+                                        <input type="hidden" name="approve" value="false" />
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">Reject</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

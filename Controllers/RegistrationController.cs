@@ -142,6 +142,7 @@ public class RegistrationController : Controller
             return View(vm);
         }
 
+        var updatedAvailableSeats = competition.AvailableSeats;
         await using var tx = await _context.Database.BeginTransactionAsync();
         Registration registration;
         try
@@ -161,6 +162,7 @@ public class RegistrationController : Controller
                 .MaxAsync(r => (int?)r.PriorityNumber) ?? 0;
             var decision = BookingEngine.DecideNewRegistration(lockedCompetition.AvailableSeats, maxPriority);
             lockedCompetition.AvailableSeats = decision.UpdatedAvailableSeats;
+            updatedAvailableSeats = decision.UpdatedAvailableSeats;
 
             registration = new Registration
             {
@@ -190,7 +192,7 @@ public class RegistrationController : Controller
             return RedirectToAction("Details", "Competition", new { id = vm.CompetitionID });
         }
 
-        await _supabaseRealtimeService.PublishSeatUpdateAsync(competition.CompetitionID, 0);
+        await _supabaseRealtimeService.PublishSeatUpdateAsync(competition.CompetitionID, updatedAvailableSeats);
 
         await _notificationService.CreateAsync(
             currentUser.UserID,
@@ -265,6 +267,7 @@ public class RegistrationController : Controller
             return View("RegisterTeam", vm);
         }
 
+        var updatedAvailableSeats = competition.AvailableSeats;
         await using var tx = await _context.Database.BeginTransactionAsync();
         try
         {
@@ -304,6 +307,7 @@ public class RegistrationController : Controller
                 .MaxAsync(r => (int?)r.PriorityNumber) ?? 0;
             var decision = BookingEngine.DecideNewRegistration(lockedCompetition.AvailableSeats, maxPriority);
             lockedCompetition.AvailableSeats = decision.UpdatedAvailableSeats;
+            updatedAvailableSeats = decision.UpdatedAvailableSeats;
 
             _context.Registrations.Add(new Registration
             {
@@ -343,7 +347,7 @@ public class RegistrationController : Controller
             throw;
         }
 
-        await _supabaseRealtimeService.PublishSeatUpdateAsync(competition.CompetitionID, 0);
+        await _supabaseRealtimeService.PublishSeatUpdateAsync(competition.CompetitionID, updatedAvailableSeats);
 
         await _notificationService.CreateAsync(
             currentUser.UserID,

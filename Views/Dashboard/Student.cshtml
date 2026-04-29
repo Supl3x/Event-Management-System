@@ -1,8 +1,25 @@
 @{
     ViewData["Title"] = "Student Hub";
+    var volunteerEvents = ViewBag.VolunteerRequestEvents as IEnumerable<dynamic>;
+    var myVolunteerRequests = ViewBag.MyVolunteerRequests as IEnumerable<dynamic>;
 }
 
 <div class="container py-5 mt-3">
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+            @successMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] is string errorMessage)
+    {
+        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+            @errorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
     <div class="row align-items-end mb-5">
         <div class="col-lg-8">
             <div class="hero-badge mb-3">
@@ -42,5 +59,58 @@
                 </form>
             </div>
         </div>
+        <div class="col-lg-4">
+            <div class="saas-card p-4 h-100">
+                <div class="comp-stat-icon mb-3"><i class="fa-solid fa-handshake-angle"></i></div>
+                <h5 class="text-white h-jakarta mb-2">Volunteer for Event</h5>
+                <p class="text-muted mb-4">Apply as a volunteer for a specific event. Request goes to both organizer and admin.</p>
+                <form asp-controller="RoleRequest" asp-action="RequestVolunteerForEvent" method="post">
+                    @Html.AntiForgeryToken()
+                    <label for="volunteerEventId" class="form-label text-light">Select event</label>
+                    <select id="volunteerEventId" name="eventId" class="form-select mb-2">
+                        @if (volunteerEvents != null)
+                        {
+                            @foreach (var evt in volunteerEvents)
+                            {
+                                <option value="@evt.EventID">@evt.Name</option>
+                            }
+                        }
+                    </select>
+                    <button type="submit" class="btn btn-info btn-sm">Send volunteer request</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="saas-card p-4 mt-4">
+        <h5 class="text-white h-jakarta mb-3">My Volunteer Requests</h5>
+        @if (myVolunteerRequests == null || !myVolunteerRequests.Any())
+        {
+            <p class="text-muted mb-0">No volunteer requests submitted yet.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-dark table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Event</th>
+                            <th>Status</th>
+                            <th>Requested at</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var req in myVolunteerRequests)
+                        {
+                            <tr>
+                                <td>@req.EventName</td>
+                                <td>@req.Status</td>
+                                <td>@(((DateTime)req.RequestedAt).ToLocalTime().ToString("yyyy-MM-dd HH:mm"))</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
     </div>
 </div>

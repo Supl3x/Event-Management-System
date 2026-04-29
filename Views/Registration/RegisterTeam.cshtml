@@ -83,7 +83,8 @@
                                         </div>
                                         <div class="col-md-6">
                                             <label asp-for="Members[i].RollNumber" class="text-white-50 small mb-1">CMS Roll Number</label>
-                                            <input asp-for="Members[i].RollNumber" class="form-control bg-navy border-secondary border-opacity-10 text-white p-2 text-300" placeholder="e.g. 345678" />
+                                            <input asp-for="Members[i].RollNumber" class="form-control bg-navy border-secondary border-opacity-10 text-white p-2 text-300" placeholder="Enter roll number" />
+                                            <span asp-validation-for="Members[i].RollNumber" class="text-danger extra-small"></span>
                                         </div>
                                         <div class="col-md-6">
                                             <label asp-for="Members[i].Department" class="text-white-50 small mb-1">Department</label>

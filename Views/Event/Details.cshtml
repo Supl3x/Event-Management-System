@@ -262,13 +262,9 @@
                                 }
                                 else
                                 {
-                                    <form asp-controller="StaffAssignment" asp-action="RequestEventVolunteer" method="post">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="eventId" value="@Model?.EventID" />
-                                        <button type="submit" class="btn btn-warning btn-lg rounded-pill fw-bold text-dark w-100">
-                                            APPLY FOR VOLUNTEER
-                                        </button>
-                                    </form>
+                                    <button type="button" class="btn btn-outline-secondary btn-lg rounded-pill fw-bold" disabled>
+                                        VOLUNTEER APPLICATION UNAVAILABLE
+                                    </button>
                                 }
                             }
                         }

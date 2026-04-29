@@ -3,6 +3,7 @@ namespace EventManagementPortal.Models;
 public class RoleManagementPageViewModel
 {
     public List<OrganizerRoleRequest> PendingRequests { get; set; } = new();
+    public List<VolunteerEventRequest> PendingVolunteerRequestsForAdmin { get; set; } = new();
     public List<UserRoleStatusViewModel> Users { get; set; } = new();
 }
 

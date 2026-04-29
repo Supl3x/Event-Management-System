@@ -70,7 +70,8 @@
                             <div class="p-3 rounded-3 border border-secondary border-opacity-10 shadow-inner" style="background: rgba(255,255,255,0.02);">
                                 <div class="mb-3">
                                     <label asp-for="RollNumber" class="form-label text-white-50 small mb-1">Roll Number</label>
-                                    <input asp-for="RollNumber" class="form-control custom-input" placeholder="e.g. 345678" />
+                                    <input asp-for="RollNumber" class="form-control custom-input" placeholder="Enter roll number" />
+                                    <span asp-validation-for="RollNumber" class="text-danger x-small"></span>
                                 </div>
                                 <div class="mb-0">
                                     <label asp-for="Department" class="form-label text-white-50 small mb-1">Department</label>
