@@ -25,3 +25,11 @@ public static class RegistrationTypes
     public const string Individual = "Individual";
     public const string Team = "Team";
 }
+
+/// <summary>Computed values for event timelines.</summary>
+public static class EventStatuses
+{
+    public const string Upcoming = "Upcoming";
+    public const string Live = "Live";
+    public const string Ended = "Ended";
+}

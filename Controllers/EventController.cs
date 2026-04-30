@@ -10,28 +10,120 @@ namespace EventManagementPortal.Controllers;
 public class EventController : Controller
 {
     private readonly ApplicationDbContext _context;
+    private readonly ILogger<EventController> _logger;
 
-    public EventController(ApplicationDbContext context)
+    public EventController(ApplicationDbContext context, ILogger<EventController> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(
+        string? search,
+        string? department,
+        string? status,
+        DateOnly? startFrom,
+        DateOnly? startTo,
+        int page = 1,
+        int pageSize = 9)
     {
-        var events = await _context.Events
+        page = Math.Max(page, 1);
+        pageSize = Math.Clamp(pageSize, 6, 24);
+        var now = DateTime.Now;
+
+        var query = _context.Events
             .AsNoTracking()
             .Include(e => e.Creator)
             .ThenInclude(c => c.User)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            query = query.Where(e =>
+                e.Name.Contains(term) ||
+                e.Department.Contains(term) ||
+                e.Location.Contains(term));
+        }
+
+        if (!string.IsNullOrWhiteSpace(department))
+        {
+            query = query.Where(e => e.Department == department);
+        }
+
+        if (startFrom is { } sf)
+        {
+            var fromDate = sf.ToDateTime(TimeOnly.MinValue);
+            query = query.Where(e => e.StartDate >= fromDate);
+        }
+
+        if (startTo is { } st)
+        {
+            var toDate = st.ToDateTime(TimeOnly.MaxValue);
+            query = query.Where(e => e.StartDate <= toDate);
+        }
+
+        var baseEvents = await query
             .OrderBy(e => e.StartDate)
             .ToListAsync();
 
-        return View(events);
+        var cards = baseEvents
+            .Select(e => new EventCardViewModel
+            {
+                EventID = e.EventID,
+                Name = e.Name,
+                Department = e.Department,
+                Location = e.Location,
+                StartDate = e.StartDate,
+                EndDate = e.EndDate,
+                OrganizerName = e.Creator?.User?.Name ?? "Admin",
+                CreatedBy = e.CreatedBy,
+                Status = e.GetStatus(now),
+                CountdownText = GetCountdownText(e, now)
+            });
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            cards = cards.Where(c => c.Status == status);
+        }
+
+        var filteredCards = cards.ToList();
+        var totalItems = filteredCards.Count;
+        var totalPages = Math.Max(1, (int)Math.Ceiling(totalItems / (double)pageSize));
+        page = Math.Min(page, totalPages);
+        var pagedCards = filteredCards
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        var vm = new EventIndexViewModel
+        {
+            Events = pagedCards,
+            Departments = await _context.Events
+                .AsNoTracking()
+                .Select(e => e.Department)
+                .Distinct()
+                .OrderBy(x => x)
+                .ToListAsync(),
+            Search = search,
+            Department = department,
+            Status = status,
+            StartFrom = startFrom,
+            StartTo = startTo,
+            Page = page,
+            TotalPages = totalPages,
+            TotalItems = totalItems,
+            PageSize = pageSize
+        };
+
+        return View(vm);
     }
 
     [HttpGet]
     public async Task<IActionResult> Details(int id)
     {
+        var now = DateTime.Now;
         var eventItem = await _context.Events
             .AsNoTracking()
             .Include(e => e.Creator)
@@ -46,7 +138,7 @@ public class EventController : Controller
 
         var userId = User.GetUserId();
         var isAdmin = User.IsInRole(AppRoles.Admin);
-        ViewBag.CanManageEvent = userId is not null && (isAdmin || eventItem.CreatedBy == userId.Value);
+        var canManageEvent = userId is not null && (isAdmin || eventItem.CreatedBy == userId.Value);
         var statusByCompetition = new Dictionary<int, string>();
         if (userId is not null && eventItem.Competitions.Count > 0)
         {
@@ -56,21 +148,36 @@ public class EventController : Controller
                 .Where(r => r.UserID == userId.Value && competitionIds.Contains(r.CompetitionID))
                 .ToDictionaryAsync(r => r.CompetitionID, r => r.Status);
         }
-        ViewBag.CompetitionRegistrationStatuses = statusByCompetition;
+        string? volunteerEventRole = null;
 
         if (userId is not null && User.IsInRole(AppRoles.Volunteer))
         {
             var volunteerAssignment = await _context.EventStaffAssignments
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.EventID == eventItem.EventID && x.UserID == userId.Value);
-            ViewBag.VolunteerEventRole = volunteerAssignment?.Role;
+            volunteerEventRole = volunteerAssignment?.Role;
         }
 
-        return View(eventItem);
+        var computedStatus = eventItem.GetStatus(now);
+        var vm = new EventDetailsViewModel
+        {
+            Event = eventItem,
+            CompetitionRegistrationStatuses = statusByCompetition,
+            VolunteerEventRole = volunteerEventRole,
+            CanManageEvent = canManageEvent,
+            EventStatus = computedStatus,
+            CountdownText = GetCountdownText(eventItem, now),
+            IsRegistrationClosed = computedStatus == EventStatuses.Ended,
+            RegistrationClosedReason = computedStatus == EventStatuses.Ended
+                ? "Registrations are closed because this event has already ended."
+                : null
+        };
+
+        return View(vm);
     }
 
     [HttpGet]
-    [Authorize(Roles = AppRoles.Organizer)]
+    [Authorize(Policy = "OrganizerOnly")]
     public IActionResult Create()
     {
         return View(new EventCreateViewModel());
@@ -78,17 +185,19 @@ public class EventController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = AppRoles.Organizer)]
+    [Authorize(Policy = "OrganizerOnly")]
     public async Task<IActionResult> Create(EventCreateViewModel vm)
     {
         var userId = User.GetUserId();
         if (userId is null)
         {
+            _logger.LogWarning("Event create denied: missing user id.");
             return Challenge();
         }
 
         if (!await _context.Organizers.AnyAsync(o => o.UserID == userId.Value))
         {
+            _logger.LogWarning("Event create forbidden for user {UserId}: organizer profile missing.", userId.Value);
             return Forbid();
         }
 
@@ -97,8 +206,21 @@ public class EventController : Controller
             ModelState.AddModelError(nameof(vm.EndDate), "End date must be on or after the start date.");
         }
 
+        if (vm.StartDate is { } startDate)
+        {
+            var minimumStartDate = DateOnly.FromDateTime(DateTime.Now).AddDays(1);
+            if (startDate < minimumStartDate)
+            {
+                ModelState.AddModelError(nameof(vm.StartDate), "Start date must be at least 1 day after today.");
+            }
+        }
+
         if (!ModelState.IsValid)
         {
+            _logger.LogInformation(
+                "Event create validation failed for user {UserId}. Reasons: {Errors}",
+                userId.Value,
+                string.Join(" | ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
             return View(vm);
         }
 
@@ -112,8 +234,17 @@ public class EventController : Controller
             CreatedBy = userId.Value
         };
 
-        _context.Events.Add(entity);
-        await _context.SaveChangesAsync();
+        try
+        {
+            _context.Events.Add(entity);
+            await _context.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Event create failed for user {UserId}. EventName={EventName}", userId.Value, vm.Name);
+            TempData["ErrorMessage"] = "Unable to create event at the moment. Please try again.";
+            return View(vm);
+        }
 
         TempData["SuccessMessage"] = $"Event \"{entity.Name}\" was created.";
         return RedirectToAction(nameof(Index));
@@ -121,18 +252,20 @@ public class EventController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = AppRoles.OrganizerOrAdmin)]
+    [Authorize(Policy = "OrganizerOrAdmin")]
     public async Task<IActionResult> Delete(int id)
     {
         var actorUserId = User.GetUserId();
         if (actorUserId is null)
         {
+            _logger.LogWarning("Event delete denied for event {EventId}: missing user id.", id);
             return Challenge();
         }
 
         var eventEntity = await _context.Events.FirstOrDefaultAsync(e => e.EventID == id);
         if (eventEntity == null)
         {
+            _logger.LogInformation("Event delete failed for user {UserId}: event {EventId} not found.", actorUserId.Value, id);
             TempData["ErrorMessage"] = "Event not found.";
             return RedirectToAction(nameof(Index));
         }
@@ -140,6 +273,11 @@ public class EventController : Controller
         var isAdmin = User.IsInRole(AppRoles.Admin);
         if (!isAdmin && eventEntity.CreatedBy != actorUserId.Value)
         {
+            _logger.LogWarning(
+                "Event delete forbidden. User {UserId} attempted deleting event {EventId} owned by {OwnerUserId}.",
+                actorUserId.Value,
+                id,
+                eventEntity.CreatedBy);
             return Forbid();
         }
 
@@ -191,13 +329,31 @@ public class EventController : Controller
             await _context.SaveChangesAsync();
             await tx.CommitAsync();
         }
-        catch
+        catch (Exception ex)
         {
             await tx.RollbackAsync();
-            throw;
+            _logger.LogError(ex, "Event delete failed for user {UserId}, event {EventId}.", actorUserId.Value, id);
+            TempData["ErrorMessage"] = "Unable to delete event right now. Please try again.";
+            return RedirectToAction(nameof(Index));
         }
 
         TempData["SuccessMessage"] = $"Event \"{eventEntity.Name}\" was deleted.";
         return RedirectToAction(nameof(Index));
+    }
+
+    private static string? GetCountdownText(Event ev, DateTime now)
+    {
+        var days = (ev.StartDate.Date - now.Date).Days;
+        if (days > 1)
+        {
+            return $"Starts in {days} days";
+        }
+
+        if (days == 1)
+        {
+            return "Starts tomorrow";
+        }
+
+        return null;
     }
 }

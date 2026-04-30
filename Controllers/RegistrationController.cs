@@ -27,7 +27,7 @@ public class RegistrationController : Controller
     }
 
     [HttpGet]
-    [Authorize(Roles = AppRoles.Student)]
+    [Authorize(Policy = "StudentOnly")]
     public async Task<IActionResult> Create(int competitionId)
     {
         var userId = User.GetUserId();
@@ -45,6 +45,12 @@ public class RegistrationController : Controller
         if (currentUser == null || competition == null)
         {
             return NotFound();
+        }
+
+        var dateGuardResult = GetCompetitionDateGuardResult(competition);
+        if (dateGuardResult is not null)
+        {
+            return dateGuardResult;
         }
 
         var alreadyRegistered = await _context.Registrations
@@ -99,7 +105,7 @@ public class RegistrationController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = AppRoles.Student)]
+    [Authorize(Policy = "StudentOnly")]
     public async Task<IActionResult> Create(IndividualCompetitionRegistrationViewModel vm)
     {
         var userId = User.GetUserId();
@@ -117,6 +123,12 @@ public class RegistrationController : Controller
         if (currentUser == null || competition == null)
         {
             return NotFound();
+        }
+
+        var dateGuardResult = GetCompetitionDateGuardResult(competition);
+        if (dateGuardResult is not null)
+        {
+            return dateGuardResult;
         }
 
         if (!vm.ConfirmRegistration)
@@ -206,7 +218,7 @@ public class RegistrationController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = AppRoles.Student)]
+    [Authorize(Policy = "StudentOnly")]
     public async Task<IActionResult> RegisterTeam(TeamRegistrationViewModel vm)
     {
         vm.Members ??= new List<TeamMemberFormRow>();
@@ -218,10 +230,17 @@ public class RegistrationController : Controller
         }
 
         var competition = await _context.Competitions.AsNoTracking()
+            .Include(c => c.Event)
             .FirstOrDefaultAsync(c => c.CompetitionID == vm.CompetitionID);
         if (competition == null)
         {
             return NotFound();
+        }
+
+        var dateGuardResult = GetCompetitionDateGuardResult(competition);
+        if (dateGuardResult is not null)
+        {
+            return dateGuardResult;
         }
 
         if (competition.MaxTeamSize <= 1)
@@ -379,6 +398,18 @@ public class RegistrationController : Controller
             vm.Members[0].Name = leader.Name;
             vm.Members[0].Email = leader.Email;
         }
+    }
+
+    private IActionResult? GetCompetitionDateGuardResult(Competition competition)
+    {
+        var today = DateTime.Now.Date;
+        if (today > competition.EndDate.Date)
+        {
+            TempData["ErrorMessage"] = "Registration is closed because this competition has already ended.";
+            return RedirectToAction("Details", "Competition", new { id = competition.CompetitionID });
+        }
+
+        return null;
     }
 
     [HttpGet]

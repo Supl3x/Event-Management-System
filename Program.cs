@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using EventManagementPortal.Data;
+using EventManagementPortal.Models;
 using EventManagementPortal.Services;
 using Npgsql;
 
@@ -28,7 +29,12 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.SlidingExpiration = true;
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("OrganizerOnly", policy => policy.RequireRole(AppRoles.Organizer));
+    options.AddPolicy("StudentOnly", policy => policy.RequireRole(AppRoles.Student));
+    options.AddPolicy("OrganizerOrAdmin", policy => policy.RequireRole(AppRoles.Organizer, AppRoles.Admin));
+});
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
