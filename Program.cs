@@ -11,6 +11,8 @@ var connectionString =
     builder.Configuration.GetValue<string>("ConnectionStrings:DefaultConnection")
     ?? builder.Configuration.GetValue<string>("ConnectionStrings__DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
+Console.WriteLine($"✅ Loaded DB connection string (length: {connectionString.Length}).");
 // Supabase pooler (6543) can be slow from distant regions; keep Command Timeout high enough.
 // Do not use EnableRetryOnFailure here: after a read timeout the INSERT may already be committed,
 // and retrying SaveChanges() causes duplicate key on users_email (23505).
@@ -41,8 +43,16 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    await ApplyVersionedMigrationsAsync(db, app.Environment.ContentRootPath);
-    await ApplicationDbSeeder.SeedAsync(db);
+    try
+    {
+        await ApplyVersionedMigrationsAsync(db, app.Environment.ContentRootPath);
+        await ApplicationDbSeeder.SeedAsync(db);
+    }
+    catch (Exception ex)
+    {
+        LogStartupException(ex);
+        throw;
+    }
 }
 
 using (var scope = app.Services.CreateScope())
@@ -127,8 +137,25 @@ static async Task ApplyVersionedMigrationsAsync(ApplicationDbContext db, string 
                 "INSERT INTO public.schema_migrations(filename, appliedat) VALUES ({0}, NOW())", filename);
         }
     }
-    catch
+    catch (Exception ex)
     {
         // Best-effort startup migration runner for environments without EF migrations.
+        LogStartupException(ex);
+    }
+}
+
+static void LogStartupException(Exception ex)
+{
+    // Intentionally avoid Exception.ToString() because your container logs show it can fail.
+    Console.Error.WriteLine("❌ Startup exception:");
+    Console.Error.WriteLine($"Type: {ex.GetType().FullName}");
+    Console.Error.WriteLine($"Message: {ex.Message}");
+
+    var inner = ex.InnerException;
+    if (inner is not null)
+    {
+        Console.Error.WriteLine("--- Inner exception ---");
+        Console.Error.WriteLine($"Type: {inner.GetType().FullName}");
+        Console.Error.WriteLine($"Message: {inner.Message}");
     }
 }
