@@ -59,6 +59,55 @@
         </div>
     </div>
 
+    <div class="saas-card p-4 mb-4" data-no-tilt="true">
+        <h5 class="text-white mb-3">Pending volunteer requests (admin review)</h5>
+        <div class="table-responsive">
+            @if (!Model.PendingVolunteerRequestsForAdmin.Any())
+            {
+                <p class="mb-0 text-muted">No pending volunteer requests.</p>
+            }
+            else
+            {
+                <table class="table table-dark table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Event</th>
+                            <th>Organizer decision</th>
+                            <th>Requested at</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var req in Model.PendingVolunteerRequestsForAdmin)
+                        {
+                            <tr>
+                                <td>@req.Student.User.Name</td>
+                                <td>@req.Event.Name</td>
+                                <td>@req.OrganizerDecision</td>
+                                <td>@req.RequestedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                                <td class="text-end">
+                                    <form asp-action="ReviewVolunteerRequestByAdmin" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="requestId" value="@req.RequestID" />
+                                        <input type="hidden" name="approve" value="true" />
+                                        <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                                    </form>
+                                    <form asp-action="ReviewVolunteerRequestByAdmin" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="requestId" value="@req.RequestID" />
+                                        <input type="hidden" name="approve" value="false" />
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">Reject</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+
     <div class="saas-card p-4" data-no-tilt="true">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
             <h5 class="text-white mb-0">Promote users</h5>

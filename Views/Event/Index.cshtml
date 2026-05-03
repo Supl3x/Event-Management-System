@@ -1,5 +1,5 @@
 @using System.Security.Claims
-@model IEnumerable<EventManagementPortal.Models.Event>
+@model EventManagementPortal.Models.EventIndexViewModel
 @{
     ViewData["Title"] = "Events Portal";
     var currentUserId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var parsedUserId)
@@ -123,9 +123,24 @@
         letter-spacing: 1px;
         padding: 5px 12px;
         border-radius: 100px;
+    }
+
+    .badge-live {
         background: rgba(34, 197, 94, 0.1);
         color: #4ade80;
         border: 1px solid rgba(34, 197, 94, 0.2);
+    }
+
+    .badge-upcoming {
+        background: rgba(59, 130, 246, 0.12);
+        color: #93c5fd;
+        border: 1px solid rgba(59, 130, 246, 0.35);
+    }
+
+    .badge-ended {
+        background: rgba(239, 68, 68, 0.12);
+        color: #fca5a5;
+        border: 1px solid rgba(239, 68, 68, 0.35);
     }
 </style>
 
@@ -139,7 +154,7 @@
             <p class="s-grotesk text-muted fs-5">Explore, learn, and grow with the latest university happenings.</p>
         </div>
         <div class="col-md-5 text-md-end">
-            @if (User.IsInRole("Organizer"))
+            @if (User.IsInRole(AppRoles.Organizer))
             {
                 <a asp-action="Create" class="btn btn-create h-jakarta">
                     <i class="fa-solid fa-plus-circle me-2"></i> Launch Event
@@ -171,22 +186,52 @@
     }
 
     @* ── Search & Metrics ── *@
-    <div class="row g-4 mb-5 align-items-center">
+    <form method="get" class="row g-3 mb-5 align-items-end">
+        <div class="col-lg-4">
+            <label class="form-label text-muted small">Search</label>
+            <input type="text" name="search" value="@Model.Search" class="form-control search-input s-grotesk" placeholder="Name, department, location">
+        </div>
+        <div class="col-lg-2">
+            <label class="form-label text-muted small">Status</label>
+            <select name="status" class="form-select">
+                <option value="">All</option>
+                @foreach (var statusOption in Model.Statuses)
+                {
+                    <option value="@statusOption" selected="@(Model.Status == statusOption ? "selected" : null)">@statusOption</option>
+                }
+            </select>
+        </div>
+        <div class="col-lg-2">
+            <label class="form-label text-muted small">Department</label>
+            <select name="department" class="form-select">
+                <option value="">All</option>
+                @foreach (var dept in Model.Departments)
+                {
+                    <option value="@dept" selected="@(Model.Department == dept ? "selected" : null)">@dept</option>
+                }
+            </select>
+        </div>
+        <div class="col-lg-2">
+            <label class="form-label text-muted small">From</label>
+            <input type="date" name="startFrom" value="@Model.StartFrom?.ToString("yyyy-MM-dd")" class="form-control">
+        </div>
+        <div class="col-lg-2">
+            <label class="form-label text-muted small">To</label>
+            <input type="date" name="startTo" value="@Model.StartTo?.ToString("yyyy-MM-dd")" class="form-control">
+        </div>
         <div class="col-lg-8">
-            <div class="search-container d-flex align-items-center">
-                <i class="fa-solid fa-magnifying-glass text-muted me-3"></i>
-                <input type="text" id="eventSearch" class="form-control search-input s-grotesk" placeholder="Search by name, department, or location...">
-            </div>
+            <button type="submit" class="btn btn-cyan btn-sm">Apply Filters</button>
+            <a asp-action="Index" class="btn btn-outline-light btn-sm">Reset</a>
         </div>
         <div class="col-lg-4 text-lg-end">
             <div class="s-grotesk text-muted small">
-                ACTIVE NODES: <span class="text-cyan fw-bold">@Model.Count()</span>
+                ACTIVE NODES: <span class="text-cyan fw-bold">@Model.TotalItems</span>
             </div>
         </div>
-    </div>
+    </form>
 
     @* ── Events Grid ── *@
-    @if (!Model.Any())
+    @if (!Model.Events.Any())
     {
         <div class="glass-panel p-5 text-center my-5">
             <div class="stat-circle icon-blue mx-auto mb-4" style="width:80px; height:80px; font-size: 2rem;">
@@ -199,8 +244,14 @@
     else
     {
         <div class="row g-4" id="eventGrid">
-            @foreach (var item in Model)
+            @foreach (var item in Model.Events)
             {
+                var statusClass = item.Status switch
+                {
+                    EventStatuses.Upcoming => "badge-upcoming",
+                    EventStatuses.Ended => "badge-ended",
+                    _ => "badge-live"
+                };
                 <div class="col-md-6 col-lg-4 event-card-wrapper">
                     <div class="event-card p-4">
                         <div class="event-glow"></div>
@@ -210,7 +261,7 @@
                             <div class="stat-circle icon-cyan mb-0" style="width:45px; height:45px; border-radius:12px; font-size: 1rem;">
                                 <i class="fa-solid fa-atom"></i>
                             </div>
-                            <span class="badge-status">● Live</span>
+                            <span class="badge-status @statusClass">● @item.Status</span>
                         </div>
 
                         @* Content *@
@@ -228,15 +279,22 @@
                             </div>
                             <div class="meta-item mb-4">
                                 <i class="fa-solid fa-user-astronaut"></i>
-                                <span class="text-muted small">Lead: @(item.Creator?.User?.Name ?? "Admin")</span>
+                                <span class="text-muted small">Lead: @item.OrganizerName</span>
                             </div>
+                            @if (!string.IsNullOrWhiteSpace(item.CountdownText))
+                            {
+                                <div class="meta-item mb-4">
+                                    <i class="fa-solid fa-hourglass-half"></i>
+                                    <span class="text-cyan">@item.CountdownText</span>
+                                </div>
+                            }
                         </div>
 
                         @* Footer Action *@
                         <div class="mt-4 pt-3 border-top border-white border-opacity-10">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span class="s-grotesk text-muted small">Engagement Status</span>
-                                <span class="s-grotesk text-cyan fw-bold small">Open</span>
+                                <span class="s-grotesk text-cyan fw-bold small">@item.Status</span>
                             </div>
                             <div class="progress-wrap">
                                 <div class="progress-fill" style="width: 100%;"></div>
@@ -269,18 +327,24 @@
                 </div>
             }
         </div>
+        @if (Model.TotalPages > 1)
+        {
+            <div class="d-flex justify-content-center gap-2 mt-4">
+                @for (var p = 1; p <= Model.TotalPages; p++)
+                {
+                    <a class="btn @(p == Model.Page ? "btn-cyan" : "btn-outline-light") btn-sm"
+                       asp-action="Index"
+                       asp-route-page="@p"
+                       asp-route-pageSize="@Model.PageSize"
+                       asp-route-search="@Model.Search"
+                       asp-route-status="@Model.Status"
+                       asp-route-department="@Model.Department"
+                       asp-route-startFrom="@Model.StartFrom?.ToString("yyyy-MM-dd")"
+                       asp-route-startTo="@Model.StartTo?.ToString("yyyy-MM-dd")">
+                        @p
+                    </a>
+                }
+            </div>
+        }
     }
 </div>
-
-@section Scripts {
-    <script>
-        $(document).ready(function() {
-            $('#eventSearch').on('keyup', function() {
-                var value = $(this).val().toLowerCase();
-                $("#eventGrid .event-card-wrapper").filter(function() {
-                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-                });
-            });
-        });
-    </script>
-}

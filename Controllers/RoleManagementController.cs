@@ -5,6 +5,7 @@ using EventManagementPortal.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace EventManagementPortal.Controllers;
 
@@ -30,6 +31,24 @@ public class RoleManagementController : Controller
             .ThenInclude(s => s.User)
             .OrderBy(r => r.RequestedAt)
             .ToListAsync();
+        List<VolunteerEventRequest> pendingVolunteerRequestsForAdmin;
+        try
+        {
+            pendingVolunteerRequestsForAdmin = await _context.VolunteerEventRequests
+                .AsNoTracking()
+                .Where(r => r.Status == VolunteerRequestDecisionStatuses.Pending
+                    && r.AdminDecision == VolunteerRequestDecisionStatuses.Pending)
+                .Include(r => r.Event)
+                .Include(r => r.Student)
+                .ThenInclude(s => s.User)
+                .OrderBy(r => r.RequestedAt)
+                .ToListAsync();
+        }
+        catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.UndefinedTable)
+        {
+            TempData["ErrorMessage"] = "Volunteer request feature requires latest database migration.";
+            pendingVolunteerRequestsForAdmin = new List<VolunteerEventRequest>();
+        }
 
         var userRows = await _context.Users
             .AsNoTracking()
@@ -49,6 +68,7 @@ public class RoleManagementController : Controller
         return View(new RoleManagementPageViewModel
         {
             PendingRequests = pendingRequests,
+            PendingVolunteerRequestsForAdmin = pendingVolunteerRequestsForAdmin,
             Users = userRows
         });
     }
@@ -124,6 +144,78 @@ public class RoleManagementController : Controller
         }
 
         TempData["SuccessMessage"] = "User promoted to volunteer.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ReviewVolunteerRequestByAdmin(int requestId, bool approve)
+    {
+        var adminUserId = User.GetUserId();
+        if (adminUserId is null)
+        {
+            return Challenge();
+        }
+
+        VolunteerEventRequest? request;
+        try
+        {
+            request = await _context.VolunteerEventRequests.FirstOrDefaultAsync(r => r.RequestID == requestId);
+        }
+        catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.UndefinedTable)
+        {
+            TempData["ErrorMessage"] = "Volunteer request feature requires latest database migration.";
+            return RedirectToAction(nameof(Index));
+        }
+        if (request == null)
+        {
+            return NotFound();
+        }
+        if (request.Status != VolunteerRequestDecisionStatuses.Pending)
+        {
+            TempData["ErrorMessage"] = "This volunteer request was already reviewed.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        request.AdminDecision = approve
+            ? VolunteerRequestDecisionStatuses.Approved
+            : VolunteerRequestDecisionStatuses.Rejected;
+        request.AdminReviewedBy = adminUserId.Value;
+        request.AdminReviewedAt = DateTime.UtcNow;
+
+        if (request.AdminDecision == VolunteerRequestDecisionStatuses.Rejected
+            || request.OrganizerDecision == VolunteerRequestDecisionStatuses.Rejected)
+        {
+            request.Status = VolunteerRequestDecisionStatuses.Rejected;
+            await _notificationService.CreateAsync(
+                request.StudentID,
+                "Your volunteer request was rejected.");
+        }
+        else if (request.AdminDecision == VolunteerRequestDecisionStatuses.Approved
+            || request.OrganizerDecision == VolunteerRequestDecisionStatuses.Approved)
+        {
+            request.Status = VolunteerRequestDecisionStatuses.Approved;
+            if (!await _context.Volunteers.AnyAsync(v => v.UserID == request.StudentID))
+            {
+                _context.Volunteers.Add(new Volunteer { UserID = request.StudentID });
+            }
+
+            await _notificationService.CreateAsync(
+                request.StudentID,
+                "Your volunteer request was approved.");
+        }
+        else
+        {
+            request.Status = VolunteerRequestDecisionStatuses.Pending;
+            await _notificationService.CreateAsync(
+                request.StudentID,
+                "Your volunteer request is pending organizer review.");
+        }
+
+        await _context.SaveChangesAsync();
+        TempData["SuccessMessage"] = approve
+            ? "Volunteer request reviewed by admin."
+            : "Volunteer request rejected by admin.";
         return RedirectToAction(nameof(Index));
     }
 }

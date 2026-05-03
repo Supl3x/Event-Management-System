@@ -24,6 +24,11 @@ public class Event
     [Required]
     public DateTime EndDate { get; set; }
 
+    /// <summary>
+    /// Timeline status based on today's date against start/end dates.
+    /// </summary>
+    public string Status => GetStatus(DateTime.Now);
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
     public int? UpdatedBy { get; set; }
@@ -33,4 +38,20 @@ public class Event
 
     public OrganizerProfile Creator { get; set; } = null!;
     public ICollection<Competition> Competitions { get; set; } = new List<Competition>();
+
+    public string GetStatus(DateTime now)
+    {
+        var today = now.Date;
+        if (today < StartDate.Date)
+        {
+            return EventStatuses.Upcoming;
+        }
+
+        if (today > EndDate.Date)
+        {
+            return EventStatuses.Ended;
+        }
+
+        return EventStatuses.Live;
+    }
 }

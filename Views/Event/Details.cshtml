@@ -1,16 +1,22 @@
-@model EventManagementPortal.Models.Event
+@model EventManagementPortal.Models.EventDetailsViewModel
 @{
-    ViewData["Title"] = Model?.Name + " - Details";
-    var organizerName = Model?.Creator?.User?.Name ?? "Campus Admin";
-    var organizerEmail = Model?.Creator?.User?.Email ?? "support@neduet.edu.pk";
-    var competitions = Model?.Competitions?
+    ViewData["Title"] = Model.Event?.Name + " - Details";
+    var organizerName = Model.Event?.Creator?.User?.Name ?? "Campus Admin";
+    var organizerEmail = Model.Event?.Creator?.User?.Email ?? "support@neduet.edu.pk";
+    var competitions = Model.Event?.Competitions?
         .OrderBy(c => c.StartDate)
         .ToList() ?? new List<EventManagementPortal.Models.Competition>();
     var primaryCompetition = competitions.FirstOrDefault();
-    var statusByCompetition = ViewBag.CompetitionRegistrationStatuses as IDictionary<int, string>
-        ?? new Dictionary<int, string>();
-    var volunteerEventRole = ViewBag.VolunteerEventRole as string;
-    var canManageEvent = ViewBag.CanManageEvent is bool allowed && allowed;
+    var statusByCompetition = Model.CompetitionRegistrationStatuses;
+    var volunteerEventRole = Model.VolunteerEventRole;
+    var canManageEvent = Model.CanManageEvent;
+    var eventStatus = Model.EventStatus;
+    var eventStatusClass = eventStatus switch
+    {
+        EventStatuses.Live => "badge-open",
+        EventStatuses.Ended => "bg-danger",
+        _ => "bg-info text-dark"
+    };
 }
 
 <style>
@@ -99,16 +105,21 @@
                         <li class="breadcrumb-item active text-white opacity-50" aria-current="page">Signal Details</li>
                     </ol>
                 </nav>
-                <h1 class="display-4 text-white h-jakarta fw-bold">@Model?.Name</h1>
-                <span class="badge-live px-3 py-1 rounded-pill small">ID: #SYS-@Model?.EventID</span>
+                <h1 class="display-4 text-white h-jakarta fw-bold">@Model.Event?.Name</h1>
+                <span class="badge @eventStatusClass px-3 py-1 rounded-pill small me-2">@eventStatus</span>
+                <span class="badge-live px-3 py-1 rounded-pill small">ID: #SYS-@Model.Event?.EventID</span>
+                @if (!string.IsNullOrWhiteSpace(Model.CountdownText))
+                {
+                    <span class="badge bg-primary px-3 py-1 rounded-pill small ms-2">@Model.CountdownText</span>
+                }
             </div>
             <div class="d-flex gap-2">
                 @if (canManageEvent)
                 {
-                    <a asp-controller="StaffAssignment" asp-action="Event" asp-route-id="@Model?.EventID" class="btn btn-outline-warning px-3 rounded-pill s-grotesk">
+                    <a asp-controller="StaffAssignment" asp-action="Event" asp-route-id="@Model.Event?.EventID" class="btn btn-outline-warning px-3 rounded-pill s-grotesk">
                         Manage volunteers
                     </a>
-                    <form asp-action="Delete" asp-route-id="@Model?.EventID" method="post" onsubmit="return confirm('Delete this event and all related records? This cannot be undone.');">
+                    <form asp-action="Delete" asp-route-id="@Model.Event?.EventID" method="post" onsubmit="return confirm('Delete this event and all related records? This cannot be undone.');">
                         @Html.AntiForgeryToken()
                         <button type="submit" class="btn btn-outline-danger px-3 rounded-pill s-grotesk">
                             Delete event
@@ -130,22 +141,22 @@
                         <div class="meta-card">
                             <div class="comp-stat-icon mb-3"><i class="fa-solid fa-building-user"></i></div>
                             <p class="text-muted small text-uppercase tracking-widest mb-1">Department</p>
-                            <h5 class="text-white h-jakarta mb-0">@Model?.Department</h5>
+                            <h5 class="text-white h-jakarta mb-0">@Model.Event?.Department</h5>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="meta-card">
                             <div class="comp-stat-icon mb-3" style="color: var(--cyan-500); border-color: var(--cyan-glow);"><i class="fa-solid fa-location-crosshairs"></i></div>
                             <p class="text-muted small text-uppercase tracking-widest mb-1">Deployment Venue</p>
-                            <h5 class="text-white h-jakarta mb-0">@Model?.Location</h5>
+                            <h5 class="text-white h-jakarta mb-0">@Model.Event?.Location</h5>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="meta-card">
                             <div class="comp-stat-icon mb-3" style="color: var(--blue-400); border-color: var(--accent-glow);"><i class="fa-solid fa-calendar-check"></i></div>
                             <p class="text-muted small text-uppercase tracking-widest mb-1">Activation Date</p>
-                            <h5 class="text-white h-jakarta mb-0">@Model?.StartDate.ToString("dd MMM yyyy")</h5>
-                            <span class="text-muted small">@Model?.StartDate.ToString("hh:mm tt")</span>
+                            <h5 class="text-white h-jakarta mb-0">@Model.Event?.StartDate.ToString("dd MMM yyyy")</h5>
+                            <span class="text-muted small">@Model.Event?.StartDate.ToString("hh:mm tt")</span>
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -168,7 +179,7 @@
                             <div class="hero-glow" style="width: 150px; height: 150px; top: -50px; left: -50px;"></div>
                             <div class="d-flex justify-content-between align-items-start mb-5">
                                 <div>
-                                    <h2 class="text-white h-jakarta fw-bold mb-2">@Model?.Name</h2>
+                                    <h2 class="text-white h-jakarta fw-bold mb-2">@Model.Event?.Name</h2>
                                     <p class="text-cyan s-grotesk tracking-widest text-uppercase small mb-0">Event Authorization Node</p>
                                 </div>
                                 <div class="text-end">
@@ -180,19 +191,19 @@
                             <div class="row pt-4 border-top border-white border-opacity-10">
                                 <div class="col-6">
                                     <p class="text-muted small mb-0">MISSION START</p>
-                                    <p class="text-white h-jakarta">@Model?.StartDate.ToString("MMM dd, yyyy")</p>
+                                    <p class="text-white h-jakarta">@Model.Event?.StartDate.ToString("MMM dd, yyyy")</p>
                                 </div>
                                 <div class="col-6 text-end">
                                     <p class="text-muted small mb-0">LOCATION NODE</p>
-                                    <p class="text-white h-jakarta">@Model?.Location</p>
+                                    <p class="text-white h-jakarta">@Model.Event?.Location</p>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-4 p-5 d-flex flex-column align-items-center justify-content-center bg-black bg-opacity-20">
                             <div class="bg-white p-3 rounded-4 mb-3 shadow-glow" style="border: 4px solid var(--cyan-500);">
-                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=EVENT-@Model?.EventID" width="110" alt="QR Code">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=EVENT-@Model.Event?.EventID" width="110" alt="QR Code">
                             </div>
-                            <code class="text-cyan fw-bold">SIGNAL: #E-@Model?.EventID</code>
+                            <code class="text-cyan fw-bold">SIGNAL: #E-@Model.Event?.EventID</code>
                         </div>
                     </div>
                 </div>
@@ -207,7 +218,7 @@
                     
                     <div class="d-flex justify-content-between mb-3 border-bottom border-white border-opacity-5 pb-3">
                         <span class="text-muted s-grotesk">Channel Status</span>
-                        <span class="badge-open">OPEN</span>
+                        <span class="badge @eventStatusClass">@eventStatus</span>
                     </div>
                     
                     <div class="d-flex justify-content-between mb-4">
@@ -226,9 +237,16 @@
                     <div class="d-grid gap-3 mt-4">
                         @if (User.Identity?.IsAuthenticated ?? false)
                         {
-                            @if (User.IsInRole("Student"))
+                            @if (User.IsInRole(AppRoles.Student))
                             {
-                                @if (primaryCompetition is not null)
+                                @if (Model.IsRegistrationClosed)
+                                {
+                                    <button type="button" class="btn btn-outline-danger btn-lg rounded-pill fw-bold" disabled>
+                                        REGISTRATION CLOSED
+                                    </button>
+                                    <p class="small text-danger mb-0">@Model.RegistrationClosedReason</p>
+                                }
+                                else if (primaryCompetition is not null)
                                 {
                                     <button type="button"
                                             class="btn btn-cyan btn-lg rounded-pill fw-bold"
@@ -246,7 +264,7 @@
                                     </button>
                                 }
                             }
-                            @if (User.IsInRole("Volunteer"))
+                            @if (User.IsInRole(AppRoles.Volunteer))
                             {
                                 @if (string.Equals(volunteerEventRole, "PendingApproval", StringComparison.OrdinalIgnoreCase))
                                 {
@@ -262,13 +280,9 @@
                                 }
                                 else
                                 {
-                                    <form asp-controller="StaffAssignment" asp-action="RequestEventVolunteer" method="post">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="eventId" value="@Model?.EventID" />
-                                        <button type="submit" class="btn btn-warning btn-lg rounded-pill fw-bold text-dark w-100">
-                                            APPLY FOR VOLUNTEER
-                                        </button>
-                                    </form>
+                                    <button type="button" class="btn btn-outline-secondary btn-lg rounded-pill fw-bold" disabled>
+                                        VOLUNTEER APPLICATION UNAVAILABLE
+                                    </button>
                                 }
                             }
                         }
@@ -324,7 +338,7 @@
                         }
                     </div>
 
-                    @if (competitions.Count > 0)
+                    @if (competitions.Count > 0 && !Model.IsRegistrationClosed)
                     {
                         <div class="collapse mt-3" id="competitionPicker">
                             <div class="p-3 rounded-4 panel-info-box">
